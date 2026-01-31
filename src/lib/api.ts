@@ -1,0 +1,165 @@
+const API_BASE = '/api';
+
+export interface InitUploadResponse {
+    id: string;
+    uploadId: string;
+    key: string;
+    partSize: number;
+    totalParts: number;
+    expiresAt: string;
+}
+
+export interface SignedPartsResponse {
+    uploadId: string;
+    parts: Array<{
+        partNumber: number;
+        uploadUrl: string;
+        method: string;
+    }>;
+    key: string;
+}
+
+export interface UploadPartResponse {
+    partNumber: number;
+    etag: string;
+    size: number;
+}
+
+export interface CompleteUploadResponse {
+    success: boolean;
+    id: string;
+    downloadUrl: string;
+    expiresAt: string;
+}
+
+export interface DownloadInfo {
+    id: string;
+    fileName: string;
+    fileSize: number;
+    contentType: string;
+    expiresAt: string;
+    createdAt: string;
+}
+
+class ApiClient {
+    private baseUrl: string;
+
+    constructor(baseUrl: string = API_BASE) {
+        this.baseUrl = baseUrl;
+    }
+
+    private async request<T>(
+        endpoint: string,
+        options: RequestInit = {}
+    ): Promise<T> {
+        const response = await fetch(`${this.baseUrl}${endpoint}`, {
+            ...options,
+            headers: {
+                'Content-Type': 'application/json',
+                ...options.headers,
+            },
+        });
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        return response.json();
+    }
+
+    /**
+     * Initialize a multipart upload
+     */
+    async initUpload(
+        fileName: string,
+        fileSize: number,
+        contentType?: string
+    ): Promise<InitUploadResponse> {
+        return this.request<InitUploadResponse>('/init', {
+            method: 'POST',
+            body: JSON.stringify({ fileName, fileSize, contentType }),
+        });
+    }
+
+    /**
+     * Get signed URLs for batch of parts
+     */
+    async signParts(
+        uploadId: string,
+        partNumbers: number[]
+    ): Promise<SignedPartsResponse> {
+        return this.request<SignedPartsResponse>('/sign', {
+            method: 'POST',
+            body: JSON.stringify({ uploadId, partNumbers }),
+        });
+    }
+
+    /**
+     * Upload a single part
+     */
+    async uploadPart(
+        id: string,
+        uploadId: string,
+        r2UploadId: string,
+        partNumber: number,
+        data: ArrayBuffer
+    ): Promise<UploadPartResponse> {
+        const response = await fetch(
+            `${this.baseUrl}/upload-part?id=${id}&uploadId=${uploadId}&r2UploadId=${r2UploadId}&partNumber=${partNumber}`,
+            {
+                method: 'PUT',
+                body: data,
+                headers: {
+                    'Content-Type': 'application/octet-stream',
+                },
+            }
+        );
+
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({ error: 'Upload failed' }));
+            throw new Error(error.error || `HTTP ${response.status}`);
+        }
+
+        return response.json();
+    }
+
+    /**
+     * Complete the multipart upload
+     */
+    async completeUpload(
+        uploadId: string,
+        parts: Array<{ partNumber: number; etag: string }>
+    ): Promise<CompleteUploadResponse> {
+        return this.request<CompleteUploadResponse>('/complete', {
+            method: 'POST',
+            body: JSON.stringify({ uploadId, parts }),
+        });
+    }
+
+    /**
+     * Abort an upload
+     */
+    async abortUpload(uploadId: string): Promise<void> {
+        await this.request('/abort', {
+            method: 'POST',
+            body: JSON.stringify({ uploadId }),
+        });
+    }
+
+    /**
+     * Get download info
+     */
+    async getDownloadInfo(id: string): Promise<DownloadInfo> {
+        return this.request<DownloadInfo>(`/download/${id}`);
+    }
+
+    /**
+     * Get download URL
+     */
+    getDownloadUrl(id: string): string {
+        return `/download/${id}/file`;
+    }
+}
+
+export const api = new ApiClient();

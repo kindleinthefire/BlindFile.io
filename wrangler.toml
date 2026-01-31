@@ -1,0 +1,26 @@
+name = "blind-file-worker"
+main = "src/worker/index.ts"
+compatibility_date = "2024-01-01"
+
+[vars]
+ENVIRONMENT = "production"
+
+# R2 Bucket Binding
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "blind-file-storage"
+
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "blind-file-db"
+database_id = "YOUR_DATABASE_ID_HERE"
+
+# Cron Trigger for 12-hour cleanup
+[triggers]
+crons = ["0 */1 * * *"]  # Run every hour to clean expired files
+
+# Development settings
+[dev]
+port = 8787
+local_protocol = "http"
