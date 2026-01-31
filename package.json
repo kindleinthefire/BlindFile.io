@@ -8,8 +8,8 @@
         "build": "tsc -p tsconfig.app.json && vite build",
         "lint": "eslint .",
         "preview": "vite preview",
-        "worker:dev": "wrangler dev --config wrangler.toml",
-        "worker:deploy": "wrangler deploy --config wrangler.toml",
+        "pages:dev": "wrangler pages dev dist --compatibility-date=2024-01-01",
+        "pages:deploy": "wrangler pages deploy dist",
         "db:migrate": "wrangler d1 execute blind-file-db --file=./schema.sql"
     },
     "dependencies": {
