@@ -12,7 +12,6 @@ export default function HomePage() {
     const { getAllFiles, stats } = useUploadStore();
 
     const files = getAllFiles();
-    const hasActiveUploads = stats.activeUploads > 0;
 
     const handleFilesSelected = useCallback(async (selectedFiles: File[]) => {
         for (const file of selectedFiles) {

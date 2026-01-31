@@ -64,7 +64,7 @@ export async function encryptChunk(
     const encrypted = await window.crypto.subtle.encrypt(
         {
             name: ALGORITHM,
-            iv,
+            iv: iv as Uint8Array<ArrayBuffer>,
         },
         key,
         data
@@ -75,7 +75,8 @@ export async function encryptChunk(
     result.set(iv, 0);
     result.set(new Uint8Array(encrypted), IV_LENGTH);
 
-    return result.buffer;
+    // Cast to ArrayBuffer to satisfy TypeScript strict mode
+    return result.buffer as ArrayBuffer;
 }
 
 /**
@@ -107,7 +108,9 @@ export async function decryptChunk(
 export function createEncryptStream(key: CryptoKey): TransformStream<Uint8Array, Uint8Array> {
     return new TransformStream({
         async transform(chunk, controller) {
-            const encrypted = await encryptChunk(key, chunk.buffer);
+            // Create a copy of the buffer to ensure it's a proper ArrayBuffer
+            const buffer = chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength) as ArrayBuffer;
+            const encrypted = await encryptChunk(key, buffer);
             controller.enqueue(new Uint8Array(encrypted));
         },
     });
@@ -120,9 +123,11 @@ export function createDecryptStream(key: CryptoKey): TransformStream<Uint8Array,
     return new TransformStream({
         async transform(chunk, controller) {
             try {
-                const decrypted = await decryptChunk(key, chunk.buffer);
+                // Create a copy of the buffer to ensure it's a proper ArrayBuffer
+                const buffer = chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength) as ArrayBuffer;
+                const decrypted = await decryptChunk(key, buffer);
                 controller.enqueue(new Uint8Array(decrypted));
-            } catch (error) {
+            } catch {
                 controller.error(new Error('Decryption failed. Invalid key or corrupted data.'));
             }
         },

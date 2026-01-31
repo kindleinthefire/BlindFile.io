@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Download,
@@ -20,7 +20,6 @@ type DownloadStatus = 'loading' | 'ready' | 'decrypting' | 'complete' | 'error' 
 
 export default function DownloadPage() {
     const { id } = useParams<{ id: string }>();
-    const navigate = useNavigate();
 
     const [status, setStatus] = useState<DownloadStatus>('loading');
     const [fileInfo, setFileInfo] = useState<DownloadInfo | null>(null);

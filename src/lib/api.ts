@@ -61,8 +61,8 @@ class ApiClient {
         });
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-            throw new Error(error.error || `HTTP ${response.status}`);
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' })) as { error?: string };
+            throw new Error(errorData.error || `HTTP ${response.status}`);
         }
 
         return response.json();
@@ -117,8 +117,8 @@ class ApiClient {
         );
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Upload failed' }));
-            throw new Error(error.error || `HTTP ${response.status}`);
+            const errorData = await response.json().catch(() => ({ error: 'Upload failed' })) as { error?: string };
+            throw new Error(errorData.error || `HTTP ${response.status}`);
         }
 
         return response.json();

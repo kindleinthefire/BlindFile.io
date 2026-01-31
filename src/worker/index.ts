@@ -1,6 +1,7 @@
+/// <reference types="@cloudflare/workers-types" />
+
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { AwsClient } from 'aws4fetch';
 
 // Types for Cloudflare bindings
 interface Env {
@@ -215,7 +216,7 @@ app.put('/api/upload-part', async (c) => {
         // Get upload info
         const upload = await env.DB.prepare(`
       SELECT * FROM uploads WHERE id = ? AND status != 'aborted'
-    `).bind(id).first();
+    `).bind(id).first() as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'Upload not found' }, 404);
@@ -224,7 +225,7 @@ app.put('/api/upload-part', async (c) => {
         const objectKey = `uploads/${id}/${upload.file_name}`;
 
         // Get the multipart upload
-        const multipartUpload = env.BUCKET.resumeMultipartUpload(objectKey, r2UploadId);
+        const multipartUpload = env.BUCKET.resumeMultipartUpload(objectKey as string, r2UploadId);
 
         // Upload the part
         const body = await c.req.arrayBuffer();
@@ -267,7 +268,7 @@ app.post('/api/complete', async (c) => {
         // Get upload info
         const upload = await env.DB.prepare(`
       SELECT * FROM uploads WHERE id = ? AND status = 'uploading'
-    `).bind(body.uploadId).first() as any;
+    `).bind(body.uploadId).first() as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'Upload not found or not in uploading state' }, 404);
@@ -276,7 +277,7 @@ app.post('/api/complete', async (c) => {
         const objectKey = `uploads/${body.uploadId}/${upload.file_name}`;
 
         // Resume and complete the multipart upload
-        const multipartUpload = env.BUCKET.resumeMultipartUpload(objectKey, upload.upload_id);
+        const multipartUpload = env.BUCKET.resumeMultipartUpload(objectKey as string, upload.upload_id as string);
 
         // Sort parts by part number
         const sortedParts = body.parts.sort((a, b) => a.partNumber - b.partNumber);
@@ -286,7 +287,7 @@ app.post('/api/complete', async (c) => {
             etag: p.etag,
         }));
 
-        const result = await multipartUpload.complete(uploadedParts);
+        await multipartUpload.complete(uploadedParts);
 
         // Update database
         await env.DB.prepare(`
@@ -333,7 +334,7 @@ app.post('/api/abort', async (c) => {
         // Get upload info
         const upload = await env.DB.prepare(`
       SELECT * FROM uploads WHERE id = ?
-    `).bind(body.uploadId).first() as any;
+    `).bind(body.uploadId).first() as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'Upload not found' }, 404);
@@ -343,7 +344,7 @@ app.post('/api/abort', async (c) => {
 
         // Abort the multipart upload in R2
         try {
-            const multipartUpload = env.BUCKET.resumeMultipartUpload(objectKey, upload.upload_id);
+            const multipartUpload = env.BUCKET.resumeMultipartUpload(objectKey as string, upload.upload_id as string);
             await multipartUpload.abort();
         } catch (e) {
             // Ignore errors if upload doesn't exist anymore
@@ -385,7 +386,7 @@ app.get('/api/download/:id', async (c) => {
         const upload = await env.DB.prepare(`
       SELECT * FROM uploads 
       WHERE id = ? AND status = 'completed' AND expires_at > datetime('now')
-    `).bind(id).first() as any;
+    `).bind(id).first() as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'File not found or expired' }, 404);
@@ -416,23 +417,23 @@ app.get('/download/:id/file', async (c) => {
         const upload = await env.DB.prepare(`
       SELECT * FROM uploads 
       WHERE id = ? AND status = 'completed' AND expires_at > datetime('now')
-    `).bind(id).first() as any;
+    `).bind(id).first() as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'File not found or expired' }, 404);
         }
 
         const objectKey = `uploads/${id}/${upload.file_name}`;
-        const object = await env.BUCKET.get(objectKey);
+        const object = await env.BUCKET.get(objectKey as string);
 
         if (!object) {
             return c.json({ error: 'File not found in storage' }, 404);
         }
 
         const headers = new Headers();
-        headers.set('Content-Type', upload.content_type);
+        headers.set('Content-Type', upload.content_type as string);
         headers.set('Content-Disposition', `attachment; filename="${upload.file_name}"`);
-        headers.set('Content-Length', upload.file_size.toString());
+        headers.set('Content-Length', String(upload.file_size));
         headers.set('Cache-Control', 'no-cache');
 
         return new Response(object.body, { headers });
@@ -457,7 +458,7 @@ async function handleScheduled(env: Env): Promise<void> {
 
         let cleaned = 0;
 
-        for (const upload of expired.results as any[]) {
+        for (const upload of expired.results as Record<string, unknown>[]) {
             try {
                 const objectKey = `uploads/${upload.id}/${upload.file_name}`;
 
@@ -497,7 +498,7 @@ async function handleScheduled(env: Env): Promise<void> {
 // ============================================
 export default {
     fetch: app.fetch,
-    scheduled: async (event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+    scheduled: async (_event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
         ctx.waitUntil(handleScheduled(env));
     },
 };
