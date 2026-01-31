@@ -1,5 +1,3 @@
-/// <reference types="@cloudflare/workers-types" />
-
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
@@ -35,10 +33,10 @@ interface AbortRequest {
 // This is CRITICAL for maintaining 78%+ margins
 // ============================================
 function calculateOptimalPartSize(fileSize: number): number {
-    const MIN_PART_SIZE = 10 * 1024 * 1024;    // 10MB - prevent abuse
+    const MIN_PART_SIZE = 10 * 1024 * 1024; // 10MB - prevent abuse
     const TARGET_PART_SIZE = 100 * 1024 * 1024; // 100MB - optimal for profit
-    const MAX_PART_SIZE = 500 * 1024 * 1024;    // 500MB - R2 limit
-    const MAX_PARTS = 10000;                     // R2 hard limit
+    const MAX_PART_SIZE = 500 * 1024 * 1024; // 500MB - R2 limit
+    const MAX_PARTS = 10000; // R2 hard limit
 
     // Formula: Math.max(10MB, Math.min(100MB, FileSize / 500))
     // This ensures we stay within R2 limits while maximizing chunk size
@@ -75,12 +73,15 @@ function getExpirationTime(): string {
 const app = new Hono<{ Bindings: Env }>();
 
 // CORS middleware
-app.use('/*', cors({
-    origin: '*',
-    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowHeaders: ['Content-Type', 'Authorization'],
-    exposeHeaders: ['ETag'],
-}));
+app.use(
+    '/*',
+    cors({
+        origin: '*',
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowHeaders: ['Content-Type', 'Authorization'],
+        exposeHeaders: ['ETag'],
+    })
+);
 
 // Health check
 app.get('/api/health', (c) => {
@@ -125,19 +126,23 @@ app.post('/api/init', async (c) => {
         });
 
         // Log to D1 database
-        await env.DB.prepare(`
+        await env.DB.prepare(
+            `
       INSERT INTO uploads (id, upload_id, file_name, file_size, part_size, total_parts, content_type, expires_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-            id,
-            multipartUpload.uploadId,
-            body.fileName,
-            body.fileSize,
-            partSize,
-            totalParts,
-            body.contentType || 'application/octet-stream',
-            getExpirationTime()
-        ).run();
+    `
+        )
+            .bind(
+                id,
+                multipartUpload.uploadId,
+                body.fileName,
+                body.fileSize,
+                partSize,
+                totalParts,
+                body.contentType || 'application/octet-stream',
+                getExpirationTime()
+            )
+            .run();
 
         return c.json({
             id,
@@ -166,9 +171,13 @@ app.post('/api/sign', async (c) => {
 
     try {
         // Verify upload exists and is valid
-        const upload = await env.DB.prepare(`
+        const upload = await env.DB.prepare(
+            `
       SELECT * FROM uploads WHERE id = ? AND status != 'aborted' AND expires_at > datetime('now')
-    `).bind(body.uploadId).first();
+    `
+        )
+            .bind(body.uploadId)
+            .first();
 
         if (!upload) {
             return c.json({ error: 'Upload not found or expired' }, 404);
@@ -183,9 +192,13 @@ app.post('/api/sign', async (c) => {
         }));
 
         // Update status to uploading
-        await env.DB.prepare(`
+        await env.DB.prepare(
+            `
       UPDATE uploads SET status = 'uploading' WHERE id = ?
-    `).bind(body.uploadId).run();
+    `
+        )
+            .bind(body.uploadId)
+            .run();
 
         return c.json({
             uploadId: body.uploadId,
@@ -214,9 +227,13 @@ app.put('/api/upload-part', async (c) => {
 
     try {
         // Get upload info
-        const upload = await env.DB.prepare(`
+        const upload = (await env.DB.prepare(
+            `
       SELECT * FROM uploads WHERE id = ? AND status != 'aborted'
-    `).bind(id).first() as Record<string, unknown> | null;
+    `
+        )
+            .bind(id)
+            .first()) as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'Upload not found' }, 404);
@@ -225,22 +242,33 @@ app.put('/api/upload-part', async (c) => {
         const objectKey = `uploads/${id}/${upload.file_name}`;
 
         // Get the multipart upload
-        const multipartUpload = env.BUCKET.resumeMultipartUpload(objectKey as string, r2UploadId);
+        const multipartUpload = env.BUCKET.resumeMultipartUpload(
+            objectKey as string,
+            r2UploadId
+        );
 
         // Upload the part
         const body = await c.req.arrayBuffer();
         const uploadedPart = await multipartUpload.uploadPart(partNumber, body);
 
         // Record part in database
-        await env.DB.prepare(`
+        await env.DB.prepare(
+            `
       INSERT OR REPLACE INTO upload_parts (upload_id, part_number, etag, size)
       VALUES (?, ?, ?, ?)
-    `).bind(id, partNumber, uploadedPart.etag, body.byteLength).run();
+    `
+        )
+            .bind(id, partNumber, uploadedPart.etag, body.byteLength)
+            .run();
 
         // Update completed parts count
-        await env.DB.prepare(`
+        await env.DB.prepare(
+            `
       UPDATE uploads SET completed_parts = completed_parts + 1 WHERE id = ?
-    `).bind(id).run();
+    `
+        )
+            .bind(id)
+            .run();
 
         return c.json({
             partNumber,
@@ -266,23 +294,33 @@ app.post('/api/complete', async (c) => {
 
     try {
         // Get upload info
-        const upload = await env.DB.prepare(`
+        const upload = (await env.DB.prepare(
+            `
       SELECT * FROM uploads WHERE id = ? AND status = 'uploading'
-    `).bind(body.uploadId).first() as Record<string, unknown> | null;
+    `
+        )
+            .bind(body.uploadId)
+            .first()) as Record<string, unknown> | null;
 
         if (!upload) {
-            return c.json({ error: 'Upload not found or not in uploading state' }, 404);
+            return c.json(
+                { error: 'Upload not found or not in uploading state' },
+                404
+            );
         }
 
         const objectKey = `uploads/${body.uploadId}/${upload.file_name}`;
 
         // Resume and complete the multipart upload
-        const multipartUpload = env.BUCKET.resumeMultipartUpload(objectKey as string, upload.upload_id as string);
+        const multipartUpload = env.BUCKET.resumeMultipartUpload(
+            objectKey as string,
+            upload.upload_id as string
+        );
 
         // Sort parts by part number
         const sortedParts = body.parts.sort((a, b) => a.partNumber - b.partNumber);
 
-        const uploadedParts = sortedParts.map(p => ({
+        const uploadedParts = sortedParts.map((p) => ({
             partNumber: p.partNumber,
             etag: p.etag,
         }));
@@ -290,22 +328,30 @@ app.post('/api/complete', async (c) => {
         await multipartUpload.complete(uploadedParts);
 
         // Update database
-        await env.DB.prepare(`
+        await env.DB.prepare(
+            `
       UPDATE uploads 
       SET status = 'completed', completed_at = datetime('now')
       WHERE id = ?
-    `).bind(body.uploadId).run();
+    `
+        )
+            .bind(body.uploadId)
+            .run();
 
         // Update daily stats
         const today = new Date().toISOString().split('T')[0];
-        await env.DB.prepare(`
+        await env.DB.prepare(
+            `
       INSERT INTO transfer_stats (date, total_uploads, total_bytes, successful_uploads)
       VALUES (?, 1, ?, 1)
       ON CONFLICT(date) DO UPDATE SET
         total_uploads = total_uploads + 1,
         total_bytes = total_bytes + excluded.total_bytes,
         successful_uploads = successful_uploads + 1
-    `).bind(today, upload.file_size).run();
+    `
+        )
+            .bind(today, upload.file_size)
+            .run();
 
         return c.json({
             success: true,
@@ -332,9 +378,13 @@ app.post('/api/abort', async (c) => {
 
     try {
         // Get upload info
-        const upload = await env.DB.prepare(`
+        const upload = (await env.DB.prepare(
+            `
       SELECT * FROM uploads WHERE id = ?
-    `).bind(body.uploadId).first() as Record<string, unknown> | null;
+    `
+        )
+            .bind(body.uploadId)
+            .first()) as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'Upload not found' }, 404);
@@ -344,7 +394,10 @@ app.post('/api/abort', async (c) => {
 
         // Abort the multipart upload in R2
         try {
-            const multipartUpload = env.BUCKET.resumeMultipartUpload(objectKey as string, upload.upload_id as string);
+            const multipartUpload = env.BUCKET.resumeMultipartUpload(
+                objectKey as string,
+                upload.upload_id as string
+            );
             await multipartUpload.abort();
         } catch (e) {
             // Ignore errors if upload doesn't exist anymore
@@ -352,18 +405,26 @@ app.post('/api/abort', async (c) => {
         }
 
         // Update database
-        await env.DB.prepare(`
+        await env.DB.prepare(
+            `
       UPDATE uploads SET status = 'aborted' WHERE id = ?
-    `).bind(body.uploadId).run();
+    `
+        )
+            .bind(body.uploadId)
+            .run();
 
         // Update failed stats
         const today = new Date().toISOString().split('T')[0];
-        await env.DB.prepare(`
+        await env.DB.prepare(
+            `
       INSERT INTO transfer_stats (date, failed_uploads)
       VALUES (?, 1)
       ON CONFLICT(date) DO UPDATE SET
         failed_uploads = failed_uploads + 1
-    `).bind(today).run();
+    `
+        )
+            .bind(today)
+            .run();
 
         return c.json({
             success: true,
@@ -383,10 +444,14 @@ app.get('/api/download/:id', async (c) => {
     const id = c.req.param('id');
 
     try {
-        const upload = await env.DB.prepare(`
+        const upload = (await env.DB.prepare(
+            `
       SELECT * FROM uploads 
       WHERE id = ? AND status = 'completed' AND expires_at > datetime('now')
-    `).bind(id).first() as Record<string, unknown> | null;
+    `
+        )
+            .bind(id)
+            .first()) as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'File not found or expired' }, 404);
@@ -414,10 +479,14 @@ app.get('/download/:id/file', async (c) => {
     const id = c.req.param('id');
 
     try {
-        const upload = await env.DB.prepare(`
+        const upload = (await env.DB.prepare(
+            `
       SELECT * FROM uploads 
       WHERE id = ? AND status = 'completed' AND expires_at > datetime('now')
-    `).bind(id).first() as Record<string, unknown> | null;
+    `
+        )
+            .bind(id)
+            .first()) as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'File not found or expired' }, 404);
@@ -432,7 +501,10 @@ app.get('/download/:id/file', async (c) => {
 
         const headers = new Headers();
         headers.set('Content-Type', upload.content_type as string);
-        headers.set('Content-Disposition', `attachment; filename="${upload.file_name}"`);
+        headers.set(
+            'Content-Disposition',
+            `attachment; filename="${upload.file_name}"`
+        );
         headers.set('Content-Length', String(upload.file_size));
         headers.set('Cache-Control', 'no-cache');
 
@@ -451,10 +523,12 @@ async function handleScheduled(env: Env): Promise<void> {
 
     try {
         // Get expired uploads
-        const expired = await env.DB.prepare(`
+        const expired = await env.DB.prepare(
+            `
       SELECT id, upload_id, file_name FROM uploads 
       WHERE expires_at <= datetime('now') AND status != 'aborted'
-    `).all();
+    `
+        ).all();
 
         let cleaned = 0;
 
@@ -466,14 +540,22 @@ async function handleScheduled(env: Env): Promise<void> {
                 await env.BUCKET.delete(objectKey);
 
                 // Update status
-                await env.DB.prepare(`
+                await env.DB.prepare(
+                    `
           UPDATE uploads SET status = 'aborted' WHERE id = ?
-        `).bind(upload.id).run();
+        `
+                )
+                    .bind(upload.id)
+                    .run();
 
                 // Delete parts
-                await env.DB.prepare(`
+                await env.DB.prepare(
+                    `
           DELETE FROM upload_parts WHERE upload_id = ?
-        `).bind(upload.id).run();
+        `
+                )
+                    .bind(upload.id)
+                    .run();
 
                 cleaned++;
             } catch (e) {
@@ -482,10 +564,12 @@ async function handleScheduled(env: Env): Promise<void> {
         }
 
         // Clean up old database records (older than 24 hours)
-        await env.DB.prepare(`
+        await env.DB.prepare(
+            `
       DELETE FROM uploads 
       WHERE expires_at <= datetime('now', '-24 hours')
-    `).run();
+    `
+        ).run();
 
         console.log(`Cleanup complete. Cleaned ${cleaned} expired files.`);
     } catch (error) {
@@ -498,7 +582,11 @@ async function handleScheduled(env: Env): Promise<void> {
 // ============================================
 export default {
     fetch: app.fetch,
-    scheduled: async (_event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+    scheduled: async (
+        _event: ScheduledEvent,
+        env: Env,
+        ctx: ExecutionContext
+    ) => {
         ctx.waitUntil(handleScheduled(env));
     },
 };

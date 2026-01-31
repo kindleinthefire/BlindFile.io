@@ -16,7 +16,13 @@ import { CountdownTimer } from '../components/CountdownTimer';
 import { api, DownloadInfo } from '../lib/api';
 import { importKey, decryptChunk, formatBytes } from '../lib/crypto';
 
-type DownloadStatus = 'loading' | 'ready' | 'decrypting' | 'complete' | 'error' | 'expired';
+type DownloadStatus =
+    | 'loading'
+    | 'ready'
+    | 'decrypting'
+    | 'complete'
+    | 'error'
+    | 'expired';
 
 export default function DownloadPage() {
     const { id } = useParams<{ id: string }>();
@@ -45,7 +51,8 @@ export default function DownloadPage() {
                 setFileInfo(info);
                 setStatus('ready');
             } catch (err) {
-                const message = err instanceof Error ? err.message : 'Failed to load file info';
+                const message =
+                    err instanceof Error ? err.message : 'Failed to load file info';
                 if (message.includes('expired') || message.includes('not found')) {
                     setStatus('expired');
                 } else {
@@ -96,7 +103,8 @@ export default function DownloadPage() {
             setProgress(100);
             setStatus('complete');
         } catch (err) {
-            const message = err instanceof Error ? err.message : 'Decryption failed';
+            const message =
+                err instanceof Error ? err.message : 'Decryption failed';
             setStatus('error');
             setError(message);
         }
@@ -118,7 +126,9 @@ export default function DownloadPage() {
                             </div>
                             <div>
                                 <h1 className="font-bold text-xl text-silver">Blind File</h1>
-                                <p className="text-xs text-silver/50">Zero-Knowledge Transfer</p>
+                                <p className="text-xs text-silver/50">
+                                    Zero-Knowledge Transfer
+                                </p>
                             </div>
                         </Link>
 
@@ -167,7 +177,9 @@ export default function DownloadPage() {
                                 <div className="w-16 h-16 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
                                     <AlertCircle className="w-8 h-8 text-red-500" />
                                 </div>
-                                <h2 className="text-xl font-bold text-silver mb-2">File Expired</h2>
+                                <h2 className="text-xl font-bold text-silver mb-2">
+                                    File Expired
+                                </h2>
                                 <p className="text-silver/60 mb-6">
                                     This file has self-destructed after 12 hours.
                                 </p>
@@ -213,9 +225,12 @@ export default function DownloadPage() {
                                         <div className="flex items-start gap-3">
                                             <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
                                             <div>
-                                                <p className="text-sm text-yellow-500 font-medium">Missing Encryption Key</p>
+                                                <p className="text-sm text-yellow-500 font-medium">
+                                                    Missing Encryption Key
+                                                </p>
                                                 <p className="text-xs text-silver/60 mt-1">
-                                                    The decryption key is missing from the URL. Make sure you're using the complete download link.
+                                                    The decryption key is missing from the URL. Make sure
+                                                    you're using the complete download link.
                                                 </p>
                                             </div>
                                         </div>
@@ -237,7 +252,8 @@ export default function DownloadPage() {
                     transition-all duration-300
                     ${encryptionKey
                                             ? 'bg-gradient-to-r from-deep-purple to-success hover:opacity-90 glow-purple text-white'
-                                            : 'bg-stealth-700 text-silver/50 cursor-not-allowed'}
+                                            : 'bg-stealth-700 text-silver/50 cursor-not-allowed'
+                                        }
                   `}
                                 >
                                     <Lock className="w-5 h-5" />
@@ -258,7 +274,9 @@ export default function DownloadPage() {
                                 <div className="w-16 h-16 rounded-full bg-deep-purple/20 flex items-center justify-center mx-auto mb-4">
                                     <Lock className="w-8 h-8 text-deep-purple animate-pulse" />
                                 </div>
-                                <h2 className="text-xl font-bold text-silver mb-2">Decrypting...</h2>
+                                <h2 className="text-xl font-bold text-silver mb-2">
+                                    Decrypting...
+                                </h2>
                                 <p className="text-silver/60 text-sm mb-6">
                                     Your file is being decrypted locally in your browser.
                                 </p>
@@ -272,7 +290,9 @@ export default function DownloadPage() {
                                         transition={{ duration: 0.3 }}
                                     />
                                 </div>
-                                <p className="text-xs text-silver/50 mt-2 font-mono">{progress}%</p>
+                                <p className="text-xs text-silver/50 mt-2 font-mono">
+                                    {progress}%
+                                </p>
                             </motion.div>
                         )}
 
@@ -293,7 +313,9 @@ export default function DownloadPage() {
                                 >
                                     <Check className="w-8 h-8 text-success" />
                                 </motion.div>
-                                <h2 className="text-xl font-bold text-silver mb-2">Download Complete!</h2>
+                                <h2 className="text-xl font-bold text-silver mb-2">
+                                    Download Complete!
+                                </h2>
                                 <p className="text-silver/60 text-sm mb-6">
                                     Your file has been decrypted and saved.
                                 </p>
@@ -334,9 +356,7 @@ export default function DownloadPage() {
                                 </p>
 
                                 <div className="glass rounded-xl p-4 mb-6 text-left">
-                                    <p className="text-xs text-silver/50">
-                                        This could mean:
-                                    </p>
+                                    <p className="text-xs text-silver/50">This could mean:</p>
                                     <ul className="text-xs text-silver/50 mt-2 space-y-1 ml-4 list-disc">
                                         <li>The encryption key in the URL is incorrect</li>
                                         <li>The file has been corrupted</li>

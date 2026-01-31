@@ -61,10 +61,11 @@ export async function encryptChunk(
 ): Promise<ArrayBuffer> {
     const iv = generateIV();
 
+    // Cast IV to satisfy TypeScript strict mode (ArrayBuffer vs SharedArrayBuffer)
     const encrypted = await window.crypto.subtle.encrypt(
         {
             name: ALGORITHM,
-            iv: iv as Uint8Array<ArrayBuffer>,
+            iv: new Uint8Array(iv) as unknown as Uint8Array<ArrayBuffer>,
         },
         key,
         data
@@ -94,7 +95,7 @@ export async function decryptChunk(
     return await window.crypto.subtle.decrypt(
         {
             name: ALGORITHM,
-            iv,
+            iv: new Uint8Array(iv) as unknown as Uint8Array<ArrayBuffer>,
         },
         key,
         encrypted
@@ -105,11 +106,13 @@ export async function decryptChunk(
  * Create an encryption transform stream
  * Encrypts data as it passes through - never loads full file into memory
  */
-export function createEncryptStream(key: CryptoKey): TransformStream<Uint8Array, Uint8Array> {
+export function createEncryptStream(
+    key: CryptoKey
+): TransformStream<Uint8Array, Uint8Array> {
     return new TransformStream({
         async transform(chunk, controller) {
-            // Create a copy of the buffer to ensure it's a proper ArrayBuffer
-            const buffer = chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength) as ArrayBuffer;
+            // Create a proper ArrayBuffer copy
+            const buffer = new Uint8Array(chunk).buffer as ArrayBuffer;
             const encrypted = await encryptChunk(key, buffer);
             controller.enqueue(new Uint8Array(encrypted));
         },
@@ -119,16 +122,20 @@ export function createEncryptStream(key: CryptoKey): TransformStream<Uint8Array,
 /**
  * Create a decryption transform stream
  */
-export function createDecryptStream(key: CryptoKey): TransformStream<Uint8Array, Uint8Array> {
+export function createDecryptStream(
+    key: CryptoKey
+): TransformStream<Uint8Array, Uint8Array> {
     return new TransformStream({
         async transform(chunk, controller) {
             try {
-                // Create a copy of the buffer to ensure it's a proper ArrayBuffer
-                const buffer = chunk.buffer.slice(chunk.byteOffset, chunk.byteOffset + chunk.byteLength) as ArrayBuffer;
+                // Create a proper ArrayBuffer copy
+                const buffer = new Uint8Array(chunk).buffer as ArrayBuffer;
                 const decrypted = await decryptChunk(key, buffer);
                 controller.enqueue(new Uint8Array(decrypted));
             } catch {
-                controller.error(new Error('Decryption failed. Invalid key or corrupted data.'));
+                controller.error(
+                    new Error('Decryption failed. Invalid key or corrupted data.')
+                );
             }
         },
     });
@@ -151,9 +158,7 @@ function arrayBufferToBase64Url(buffer: ArrayBuffer): string {
 }
 
 function base64UrlToArrayBuffer(base64url: string): ArrayBuffer {
-    const base64 = base64url
-        .replace(/-/g, '+')
-        .replace(/_/g, '/');
+    const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
 
     const padding = base64.length % 4;
     const padded = padding ? base64 + '='.repeat(4 - padding) : base64;
@@ -163,7 +168,7 @@ function base64UrlToArrayBuffer(base64url: string): ArrayBuffer {
     for (let i = 0; i < binary.length; i++) {
         bytes[i] = binary.charCodeAt(i);
     }
-    return bytes.buffer;
+    return bytes.buffer as ArrayBuffer;
 }
 
 /**

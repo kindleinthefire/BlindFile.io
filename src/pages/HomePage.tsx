@@ -13,11 +13,14 @@ export default function HomePage() {
 
     const files = getAllFiles();
 
-    const handleFilesSelected = useCallback(async (selectedFiles: File[]) => {
-        for (const file of selectedFiles) {
-            upload(file);
-        }
-    }, [upload]);
+    const handleFilesSelected = useCallback(
+        async (selectedFiles: File[]) => {
+            for (const file of selectedFiles) {
+                upload(file);
+            }
+        },
+        [upload]
+    );
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -35,7 +38,9 @@ export default function HomePage() {
                             </div>
                             <div>
                                 <h1 className="font-bold text-xl text-silver">Blind File</h1>
-                                <p className="text-xs text-silver/50">Zero-Knowledge Transfer</p>
+                                <p className="text-xs text-silver/50">
+                                    Zero-Knowledge Transfer
+                                </p>
                             </div>
                         </div>
 
@@ -76,9 +81,8 @@ export default function HomePage() {
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ delay: 0.3 }}
                     >
-                        End-to-end encrypted file sharing up to 500GB.
-                        Your files self-destruct in 12 hours.
-                        We never see your data.
+                        End-to-end encrypted file sharing up to 500GB. Your files
+                        self-destruct in 12 hours. We never see your data.
                     </motion.p>
 
                     {/* Feature badges */}
@@ -90,7 +94,9 @@ export default function HomePage() {
                     >
                         <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
                             <Shield className="w-4 h-4 text-success" />
-                            <span className="text-sm text-silver">Zero-Knowledge Encryption</span>
+                            <span className="text-sm text-silver">
+                                Zero-Knowledge Encryption
+                            </span>
                         </div>
                         <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
                             <Zap className="w-4 h-4 text-deep-purple" />
@@ -102,7 +108,9 @@ export default function HomePage() {
                         </div>
                         <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
                             <Eye className="w-4 h-4 text-red-500" strokeWidth={1.5} />
-                            <span className="text-sm text-silver line-through opacity-50">We See Your Data</span>
+                            <span className="text-sm text-silver line-through opacity-50">
+                                We See Your Data
+                            </span>
                         </div>
                     </motion.div>
                 </div>
@@ -119,10 +127,7 @@ export default function HomePage() {
                     )}
 
                     {/* Drop zone */}
-                    <DropZone
-                        onFilesSelected={handleFilesSelected}
-                        disabled={false}
-                    />
+                    <DropZone onFilesSelected={handleFilesSelected} disabled={false} />
 
                     {/* Upload list */}
                     <AnimatePresence>
@@ -160,8 +165,8 @@ export default function HomePage() {
                     <p className="text-xs text-silver/40">
                         Built with{' '}
                         <span className="text-deep-purple">Cloudflare Workers</span> +{' '}
-                        <span className="text-success">R2</span>.
-                        Zero egress fees. Maximum privacy.
+                        <span className="text-success">R2</span>. Zero egress fees. Maximum
+                        privacy.
                     </p>
                 </div>
             </footer>
