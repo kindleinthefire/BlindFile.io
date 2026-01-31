@@ -1,3 +1,5 @@
+/// <reference types="@cloudflare/workers-types" />
+
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { handle } from 'hono/cloudflare-pages';
@@ -67,7 +69,8 @@ function getExpirationTime(): string {
 // ============================================
 // HONO APP CONFIGURATION
 // ============================================
-const app = new Hono<{ Bindings: Env }>().basePath('/api');
+// Note: No basePath needed - file is in functions/api/ which auto-mounts at /api
+const app = new Hono<{ Bindings: Env }>();
 
 // CORS middleware
 app.use(
