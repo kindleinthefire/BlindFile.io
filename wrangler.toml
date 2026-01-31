@@ -1,5 +1,6 @@
 name = "blind-file"
 compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 # Cloudflare Pages configuration
 pages_build_output_dir = "dist"
@@ -7,16 +8,13 @@ pages_build_output_dir = "dist"
 [vars]
 ENVIRONMENT = "production"
 
-# R2 Bucket Binding
+# R2 Bucket Binding (configured in dashboard)
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "blind-file-storage"
 
-# D1 Database Binding
-[[d1_databases]]
-binding = "DB"
-database_name = "blind-file-db"
-database_id = "YOUR_DATABASE_ID_HERE"
+# D1 Database binding is configured in Cloudflare Pages Dashboard
+# Do not add [[d1_databases]] here - it will override dashboard settings
 
 # Development settings
 [dev]
