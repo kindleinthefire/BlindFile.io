@@ -69,8 +69,8 @@ function getExpirationTime(): string {
 // ============================================
 // HONO APP CONFIGURATION
 // ============================================
-// Note: No basePath needed - file is in functions/api/ which auto-mounts at /api
-const app = new Hono<{ Bindings: Env }>();
+// Note: We need basePath('/api') because the request URL includes /api and Hono matches against the full path
+const app = new Hono<{ Bindings: Env }>().basePath('/api');
 
 // CORS middleware
 app.use(
