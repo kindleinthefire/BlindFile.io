@@ -170,14 +170,17 @@ app.post('/upload/sign', async (c) => {
     }
 
     try {
-        // Verify upload exists and is valid
+        // ROBUST: Check both ID (UUID) and upload_id (R2 ID)
         const upload = await env.DB.prepare(
             `
-      SELECT * FROM uploads WHERE id = ? AND status != 'aborted' AND expires_at > datetime('now')
+      SELECT * FROM uploads 
+      WHERE (id = ? OR upload_id = ?) 
+      AND status != 'aborted' 
+      AND expires_at > datetime('now')
     `
         )
-            .bind(body.uploadId)
-            .first();
+            .bind(body.uploadId, body.uploadId)
+            .first() as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'Upload not found or expired' }, 404);
@@ -190,13 +193,13 @@ app.post('/upload/sign', async (c) => {
             method: 'PUT',
         }));
 
-        // Update status to uploading
+        // Update status to uploading using the found primary key
         await env.DB.prepare(
             `
       UPDATE uploads SET status = 'uploading' WHERE id = ?
     `
         )
-            .bind(body.uploadId)
+            .bind(upload.id)
             .run();
 
         return c.json({
@@ -216,7 +219,7 @@ app.post('/upload/sign', async (c) => {
 app.put('/upload/part', async (c) => {
     const env = c.env;
     const uploadId = c.req.query('uploadId');
-    const id = c.req.query('id');
+    const id = c.req.query('id'); // UUID
     const partNumber = parseInt(c.req.query('partNumber') || '0');
     const r2UploadId = c.req.query('r2UploadId');
 
@@ -228,7 +231,9 @@ app.put('/upload/part', async (c) => {
         // Get upload info
         const upload = (await env.DB.prepare(
             `
-      SELECT * FROM uploads WHERE id = ? AND status != 'aborted'
+      SELECT * FROM uploads 
+      WHERE id = ? 
+      AND status != 'aborted'
     `
         )
             .bind(id)
@@ -292,23 +297,27 @@ app.post('/upload/complete', async (c) => {
     }
 
     try {
-        // Get upload info
+        // ROBUST: Check both ID and upload_id
+        // CRITICAL FIX: Allow 'pending' state because single-stream uploads might skip 'sign' endpoint
         const upload = (await env.DB.prepare(
             `
-      SELECT * FROM uploads WHERE id = ? AND status = 'uploading'
+      SELECT * FROM uploads 
+      WHERE (id = ? OR upload_id = ?) 
+      AND (status = 'uploading' OR status = 'pending')
     `
         )
-            .bind(body.uploadId)
+            .bind(body.uploadId, body.uploadId)
             .first()) as Record<string, unknown> | null;
 
         if (!upload) {
+            console.error('Complete failed: Upload not found pending/uploading', body.uploadId);
             return c.json(
                 { error: 'Upload not found or not in uploading state' },
                 404
             );
         }
 
-        const objectKey = `uploads/${body.uploadId}/${upload.file_name}`;
+        const objectKey = `uploads/${upload.id}/${upload.file_name}`;
 
         // Resume and complete the multipart upload
         const multipartUpload = env.BUCKET.resumeMultipartUpload(
@@ -326,7 +335,7 @@ app.post('/upload/complete', async (c) => {
 
         await multipartUpload.complete(uploadedParts);
 
-        // Update database
+        // Update database using found ID
         await env.DB.prepare(
             `
       UPDATE uploads 
@@ -334,7 +343,7 @@ app.post('/upload/complete', async (c) => {
       WHERE id = ?
     `
         )
-            .bind(body.uploadId)
+            .bind(upload.id)
             .run();
 
         // Update daily stats
@@ -354,8 +363,8 @@ app.post('/upload/complete', async (c) => {
 
         return c.json({
             success: true,
-            id: body.uploadId,
-            downloadUrl: `/download/${body.uploadId}`,
+            id: upload.id,
+            downloadUrl: `/download/${upload.id}`,
             expiresAt: upload.expires_at,
         });
     } catch (error) {
@@ -376,20 +385,20 @@ app.post('/upload/abort', async (c) => {
     }
 
     try {
-        // Get upload info
+        // ROBUST: Check both ID and upload_id
         const upload = (await env.DB.prepare(
             `
-      SELECT * FROM uploads WHERE id = ?
+      SELECT * FROM uploads WHERE (id = ? OR upload_id = ?)
     `
         )
-            .bind(body.uploadId)
+            .bind(body.uploadId, body.uploadId)
             .first()) as Record<string, unknown> | null;
 
         if (!upload) {
             return c.json({ error: 'Upload not found' }, 404);
         }
 
-        const objectKey = `uploads/${body.uploadId}/${upload.file_name}`;
+        const objectKey = `uploads/${upload.id}/${upload.file_name}`;
 
         // Abort the multipart upload in R2
         try {
@@ -402,13 +411,13 @@ app.post('/upload/abort', async (c) => {
             console.log('Abort R2 upload failed (may already be cleaned):', e);
         }
 
-        // Update database
+        // Update database using found ID
         await env.DB.prepare(
             `
       UPDATE uploads SET status = 'aborted' WHERE id = ?
     `
         )
-            .bind(body.uploadId)
+            .bind(upload.id)
             .run();
 
         // Update failed stats
