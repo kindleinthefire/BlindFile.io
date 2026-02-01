@@ -8,13 +8,16 @@ pages_build_output_dir = "dist"
 [vars]
 ENVIRONMENT = "production"
 
-# R2 Bucket Binding (configured in dashboard)
+# R2 Bucket Binding
 [[r2_buckets]]
 binding = "BUCKET"
 bucket_name = "blind-file-storage"
 
-# D1 Database binding is configured in Cloudflare Pages Dashboard
-# Do not add [[d1_databases]] here - it will override dashboard settings
+# D1 Database Binding
+[[d1_databases]]
+binding = "DB"
+database_name = "blindfile-db"
+database_id = "edf22584-efd2-471f-8854-f6ffa91ac66a"
 
 # Development settings
 [dev]
