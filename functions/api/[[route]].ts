@@ -89,9 +89,9 @@ app.get('/health', (c) => {
 });
 
 // ============================================
-// POST /api/init - Initialize Multipart Upload
+// POST /api/upload/init - Initialize Multipart Upload
 // ============================================
-app.post('/init', async (c) => {
+app.post('/upload/init', async (c) => {
     const env = c.env;
     const body = await c.req.json<InitRequest>();
 
@@ -159,9 +159,9 @@ app.post('/init', async (c) => {
 });
 
 // ============================================
-// POST /api/sign - Generate Signed URLs (Batch)
+// POST /api/upload/sign - Generate Signed URLs (Batch)
 // ============================================
-app.post('/sign', async (c) => {
+app.post('/upload/sign', async (c) => {
     const env = c.env;
     const body = await c.req.json<SignRequest>();
 
@@ -186,7 +186,7 @@ app.post('/sign', async (c) => {
         // For R2, we don't need traditional signed URLs since we're using the binding
         const signedParts = body.partNumbers.map((partNumber) => ({
             partNumber,
-            uploadUrl: `/api/upload-part`,
+            uploadUrl: `/api/upload/part`,
             method: 'PUT',
         }));
 
@@ -211,9 +211,9 @@ app.post('/sign', async (c) => {
 });
 
 // ============================================
-// PUT /api/upload-part - Upload a single part
+// PUT /api/upload/part - Upload a single part
 // ============================================
-app.put('/upload-part', async (c) => {
+app.put('/upload/part', async (c) => {
     const env = c.env;
     const uploadId = c.req.query('uploadId');
     const id = c.req.query('id');
@@ -281,9 +281,9 @@ app.put('/upload-part', async (c) => {
 });
 
 // ============================================
-// POST /api/complete - Finalize Multipart Upload
+// POST /api/upload/complete - Finalize Multipart Upload
 // ============================================
-app.post('/complete', async (c) => {
+app.post('/upload/complete', async (c) => {
     const env = c.env;
     const body = await c.req.json<CompleteRequest>();
 
@@ -365,9 +365,9 @@ app.post('/complete', async (c) => {
 });
 
 // ============================================
-// POST /api/abort - Abort and cleanup upload
+// POST /api/upload/abort - Abort and cleanup upload
 // ============================================
-app.post('/abort', async (c) => {
+app.post('/upload/abort', async (c) => {
     const env = c.env;
     const body = await c.req.json<AbortRequest>();
 

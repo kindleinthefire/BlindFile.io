@@ -76,7 +76,7 @@ class ApiClient {
         fileSize: number,
         contentType?: string
     ): Promise<InitUploadResponse> {
-        return this.request<InitUploadResponse>('/init', {
+        return this.request<InitUploadResponse>('/upload/init', {
             method: 'POST',
             body: JSON.stringify({ fileName, fileSize, contentType }),
         });
@@ -89,7 +89,7 @@ class ApiClient {
         uploadId: string,
         partNumbers: number[]
     ): Promise<SignedPartsResponse> {
-        return this.request<SignedPartsResponse>('/sign', {
+        return this.request<SignedPartsResponse>('/upload/sign', {
             method: 'POST',
             body: JSON.stringify({ uploadId, partNumbers }),
         });
@@ -106,7 +106,7 @@ class ApiClient {
         data: ArrayBuffer
     ): Promise<UploadPartResponse> {
         const response = await fetch(
-            `${this.baseUrl}/upload-part?id=${id}&uploadId=${uploadId}&r2UploadId=${r2UploadId}&partNumber=${partNumber}`,
+            `${this.baseUrl}/upload/part?id=${id}&uploadId=${uploadId}&r2UploadId=${r2UploadId}&partNumber=${partNumber}`,
             {
                 method: 'PUT',
                 body: data,
@@ -131,7 +131,7 @@ class ApiClient {
         uploadId: string,
         parts: Array<{ partNumber: number; etag: string }>
     ): Promise<CompleteUploadResponse> {
-        return this.request<CompleteUploadResponse>('/complete', {
+        return this.request<CompleteUploadResponse>('/upload/complete', {
             method: 'POST',
             body: JSON.stringify({ uploadId, parts }),
         });
@@ -141,7 +141,7 @@ class ApiClient {
      * Abort an upload
      */
     async abortUpload(uploadId: string): Promise<void> {
-        await this.request('/abort', {
+        await this.request('/upload/abort', {
             method: 'POST',
             body: JSON.stringify({ uploadId }),
         });
