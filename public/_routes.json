@@ -4,11 +4,6 @@
         "/*"
     ],
     "exclude": [
-        "*.css",
-        "*.js",
-        "*.png",
-        "*.jpg",
-        "*.svg",
         "/assets/*",
         "/favicon.ico"
     ]
