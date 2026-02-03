@@ -36,18 +36,15 @@ interface AbortRequest {
 // This is CRITICAL for maintaining 78%+ margins
 // ============================================
 function calculateOptimalPartSize(fileSize: number): number {
-    const MIN_PART_SIZE = 10 * 1024 * 1024; // 10MB - prevent abuse
-    const TARGET_PART_SIZE = 100 * 1024 * 1024; // 100MB - optimal for profit
+    const MIN_PART_SIZE = 5 * 1024 * 1024; // 5MB
+    const TARGET_PART_SIZE = 10 * 1024 * 1024; // 10MB - User requested limit for memory safety
     const MAX_PART_SIZE = 500 * 1024 * 1024; // 500MB - R2 limit
     const MAX_PARTS = 10000; // R2 hard limit
 
-    let calculatedSize = Math.floor(fileSize / 500);
+    // Default to 10MB as requested to prevent browser crashes
+    let calculatedSize = TARGET_PART_SIZE;
 
-    // Apply boundaries
-    calculatedSize = Math.max(MIN_PART_SIZE, calculatedSize);
-    calculatedSize = Math.min(TARGET_PART_SIZE, calculatedSize);
-
-    // Edge case: if file is huge, we need larger parts to stay under 10k parts
+    // Edge case: if file is huge (>100GB), we must increase part size to stay under 10k parts
     const minRequiredSize = Math.ceil(fileSize / MAX_PARTS);
     if (minRequiredSize > calculatedSize) {
         calculatedSize = Math.min(minRequiredSize, MAX_PART_SIZE);
