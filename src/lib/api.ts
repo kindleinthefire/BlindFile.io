@@ -105,8 +105,15 @@ class ApiClient {
         partNumber: number,
         data: ArrayBuffer
     ): Promise<UploadPartResponse> {
+        const params = new URLSearchParams({
+            id,
+            uploadId,
+            r2UploadId,
+            partNumber: partNumber.toString(),
+        });
+
         const response = await fetch(
-            `${this.baseUrl}/upload/part?id=${id}&uploadId=${uploadId}&r2UploadId=${r2UploadId}&partNumber=${partNumber}`,
+            `${this.baseUrl}/upload/part?${params.toString()}`,
             {
                 method: 'PUT',
                 body: data,
