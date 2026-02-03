@@ -120,7 +120,7 @@ export function UploadCard({ file, onPause, onResume, onCancel }: UploadCardProp
                 </div>
 
                 {/* Progress bars */}
-                {isActive && (
+                {(isActive || file.status === 'completed') && (
                     <div className="space-y-2 mb-3">
                         {/* Encryption progress */}
                         <div>
@@ -168,7 +168,7 @@ export function UploadCard({ file, onPause, onResume, onCancel }: UploadCardProp
 
                 {/* Stats */}
                 {isActive && (
-                    <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center justify-between text-xs mb-3">
                         <div className="flex items-center gap-4">
                             <span className="text-silver/50">
                                 Speed: <span className="font-mono text-success">{formatSpeed(file.speed)}</span>
@@ -180,29 +180,44 @@ export function UploadCard({ file, onPause, onResume, onCancel }: UploadCardProp
                     </div>
                 )}
 
-                {/* Status text */}
-                <div className="flex items-center justify-between mt-2">
-                    <span className="text-xs text-silver/60">{getStatusText()}</span>
+                {/* Status & Download Card */}
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs text-silver/60">{getStatusText()}</span>
+                    </div>
 
                     {file.status === 'completed' && file.downloadUrl && (
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={copyLink}
-                                className="flex items-center gap-1 text-xs text-deep-purple hover:text-deep-purple/80 transition-colors"
-                            >
-                                <Copy className="w-3 h-3" />
-                                {copied ? 'Copied!' : 'Copy Link'}
-                            </button>
-                            <a
-                                href={file.downloadUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-xs text-success hover:text-success/80 transition-colors"
-                            >
-                                <ExternalLink className="w-3 h-3" />
-                                Open
-                            </a>
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-2 bg-white/5 rounded-lg p-3 border border-white/10 flex items-center justify-between gap-3 group/card"
+                        >
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[10px] uppercase tracking-wider text-silver/40 font-semibold mb-0.5">Share Link</p>
+                                <p className="text-xs font-mono text-success truncate select-all">
+                                    {file.downloadUrl}
+                                </p>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={copyLink}
+                                    className="p-2 rounded-md hover:bg-white/10 transition-colors text-silver hover:text-white"
+                                    title="Copy Link"
+                                >
+                                    {copied ? <CheckCircle className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                                </button>
+                                <a
+                                    href={file.downloadUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-2 rounded-md hover:bg-white/10 transition-colors text-silver hover:text-white"
+                                    title="Open Link"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                </a>
+                            </div>
+                        </motion.div>
                     )}
                 </div>
 
