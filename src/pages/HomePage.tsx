@@ -1,15 +1,13 @@
 import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EyeOff, Github } from 'lucide-react';
-import { DropZone } from '../components/DropZone';
 import { UploadCard } from '../components/UploadCard';
-import { UploadStats } from '../components/UploadStats';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
 
 export default function HomePage() {
     const { upload, pause, resume, cancel } = useFileUploader();
-    const { getAllFiles, stats } = useUploadStore();
+    const { getAllFiles } = useUploadStore();
 
     const files = getAllFiles();
 
@@ -76,103 +74,62 @@ export default function HomePage() {
             {/* FUNCTIONAL LAYER: Your existing BlindFile components */}
             <div className="relative z-10 w-full max-w-4xl px-4 flex-1 flex flex-col justify-center">
 
-                {/* Dynamic Content Switching: If files exist, show stats/list. If not, show the 'Antigravity' prompt */}
-                {files.length > 0 ? (
+                {/* Dynamic Content Switching: Maintain Antigravity Aesthetic even during upload */}
+                <div className="w-full flex flex-col items-center">
+                    <AnimatePresence mode="wait">
+                        {files.length === 0 && (
+                            <motion.div
+                                key="hero-text"
+                                className="text-center"
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, y: -20, position: 'absolute' }}
+                                transition={{ duration: 0.5 }}
+                            >
+                                <h1 className="text-5xl md:text-7xl font-bold text-white mb-2 tracking-tight">
+                                    Upload Files
+                                </h1>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Active Uploads List - Floating, specialized for Homepage */}
+                    <AnimatePresence>
+                        {files.length > 0 && (
+                            <motion.div
+                                key="upload-list"
+                                className="w-full max-w-xl my-12 space-y-4"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                layout
+                            >
+                                {files.map((file) => (
+                                    <UploadCard
+                                        key={file.id}
+                                        file={file}
+                                        onPause={() => pause(file.id)}
+                                        onResume={() => resume(file.id)}
+                                        onCancel={() => cancel(file.id)}
+                                    />
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Button stays consistent, just moves down if needed */}
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="w-full"
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                        className="z-50"
                     >
-                        <div className="mb-6">
-                            <UploadStats stats={stats} />
-                        </div>
-                        {/* We can re-use the standard dropzone here or keep the minimal one. 
-                             To stick to the request "Keep all existing file upload logic", let's render the list and a mini dropzone.
-                         */}
-                        <div className="glass rounded-2xl p-6 bg-black/40 border border-white/10 backdrop-blur-xl mb-6">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="text-white/80 font-medium">Active Uploads</h3>
-                            </div>
-                            <AnimatePresence>
-                                <motion.div className="space-y-3">
-                                    {files.map((file) => (
-                                        <UploadCard
-                                            key={file.id}
-                                            file={file}
-                                            onPause={() => pause(file.id)}
-                                            onResume={() => resume(file.id)}
-                                            onCancel={() => cancel(file.id)}
-                                        />
-                                    ))}
-                                </motion.div>
-                            </AnimatePresence>
-                        </div>
-
-                        {/* Mini Dropzone for adding more files */}
-                        <DropZone onFilesSelected={handleFilesSelected} disabled={false} />
+                        <CustomUploadTrigger
+                            onFilesSelected={handleFilesSelected}
+                            label={files.length > 0 ? "Add More Files" : "Choose Files"}
+                        />
                     </motion.div>
-                ) : (
-                    <div className="text-center">
-                        <motion.h1
-                            className="text-5xl md:text-7xl font-bold text-white mb-8 tracking-tight"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
-                        >
-                            Upload Files
-                        </motion.h1>
-
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2, duration: 0.8 }}
-                        >
-                            {/* The DropZone Component actually handles the click/drag logic internally.
-                                 To style it as a simple "Ghost Button", we might need to adjust DropZone prop or wrap it. 
-                                 However, DropZone has its own UI. 
-                                 Request: "Re-skin the UI... Center the 'Upload Files' header and the 'Choose Files' button."
-                                 
-                                 Since DropZone contains the input logic, the cleanest way without rewriting DropZone entirely 
-                                 (which violates "Keep... logic... exactly as they are" potentially, but user said "Re-skin")
-                                 is to WRAP the logic or Customise the DropZone appearance.
-                                 
-                                 Wait, the prompt said "Keep all existing file upload logic... Re-skin the UI".
-                                 It implies I can change the JSX in DropZone or here.
-                                 Let's keep DropZone logic but pass a custom trigger or simply
-                                 render the DropZone invisible on top of our button? 
-                                 
-                                 Actually, DropZone.tsx exports a full UI. 
-                                 The user provided a snippet:
-                                 <button onClick={yourExistingUploadFunction} ...>Choose Files</button>
-                                 <input type="file" ... />
-                                 
-                                 I cannot access `yourExistingUploadFunction` easily without exposing it from DropZone 
-                                 or rewriting DropZone logic here. 
-                                 
-                                 COMPROMISE: I will use the `DropZone` component but wrapping it 
-                                 or relying on the user's implicit permission to modify `DropZone.tsx` visually 
-                                 since they asked to "Re-skin the UI".
-                                 However, I will simply modify HomePage to use the DropZone in a way that fits, 
-                                 OR better yet, I will modify THIS file (HomePage) to render the new UI 
-                                 and pass the logic to DropZone if possible? No.
-                                 
-                                 ACTUAL PLAN: use `DropZone` as is for "functional layer" but maybe we need to
-                                 tweak DropZone styling to match the ghost button request?
-                                 
-                                 Let's look at the request again: "Center the 'Upload Files' header and the 'Choose Files' button... Ensure the button is a 'Ghost' style".
-                                 
-                                 If I use the existing `DropZone`, it looks like a big box.
-                                 I will replace the big `DropZone` usage here with the explicit markup requested, 
-                                 and wire up the input ref manually here since I have `handleFilesSelected`.
-                                 This is "keeping all existing file upload logic" (the hook, the store, the uploader)
-                                 but changing the "UI" (the click handler/input).
-                            */}
-
-                            <CustomUploadTrigger onFilesSelected={handleFilesSelected} />
-
-                        </motion.div>
-                    </div>
-                )}
+                </div>
             </div>
 
             {/* Footer */}
@@ -191,19 +148,18 @@ export default function HomePage() {
 }
 
 // Helper component to implement the "Ghost Button" UI while keeping logic
-function CustomUploadTrigger({ onFilesSelected }: { onFilesSelected: (files: File[]) => void }) {
+function CustomUploadTrigger({
+    onFilesSelected,
+    label = "Choose Files"
+}: {
+    onFilesSelected: (files: File[]) => void,
+    label?: string
+}) {
     const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length > 0) onFilesSelected(files);
         e.target.value = '';
     };
-
-    // We can't reuse DropZone logic 1:1 without copying it or modifying DropZone.tsx.
-    // But basic file input triggering is simple. 
-    // DRAG AND DROP support on the "whole screen" or the button? 
-    // The request implies a simple button center screen. 
-    // Let's implement a simple click-to-upload for the "Antigravity" look 
-    // and maybe a full-screen drag listener? simpler is better for "Ghost".
 
     return (
         <div className="relative group">
@@ -230,7 +186,7 @@ function CustomUploadTrigger({ onFilesSelected }: { onFilesSelected: (files: Fil
                     backdrop-blur-md
                 "
             >
-                Choose Files
+                {label}
             </label>
         </div>
     );
