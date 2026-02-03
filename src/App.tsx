@@ -9,6 +9,7 @@ function App() {
             <AnimatePresence mode="wait">
                 <Routes>
                     <Route path="/" element={<HomePage />} />
+                    <Route path="/app" element={<HomePage />} />
                     <Route path="/download/:id" element={<DownloadPage />} />
                 </Routes>
             </AnimatePresence>
