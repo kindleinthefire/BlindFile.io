@@ -4,7 +4,12 @@
         "/*"
     ],
     "exclude": [
-        "/api/*",
-        "/download/*"
+        "*.css",
+        "*.js",
+        "*.png",
+        "*.jpg",
+        "*.svg",
+        "/assets/*",
+        "/favicon.ico"
     ]
 }
