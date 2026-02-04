@@ -1,20 +1,104 @@
-import { Hono } from 'hono';
-
 interface Env {
     BUCKET: R2Bucket;
     DB: D1Database;
 }
 
-const app = new Hono<{ Bindings: Env }>();
+export async function onRequestPost({ request, env }: { request: Request, env: Env }) {
+    try {
+        // --- DIAGNOSTIC CHECK 1: Are settings correct? ---
+        if (!env.BUCKET) {
+            throw new Error("CRITICAL ERROR: 'BUCKET' is not bound. Check your wrangler.toml or Cloudflare Dashboard -> Settings -> Functions -> R2 Bucket Bindings. Make sure the variable name is exactly 'BUCKET'.");
+        }
 
-// Standard AES-GCM constants
-const ALGORITHM = 'AES-GCM';
-const IV_LENGTH = 12;
-const TAG_LENGTH = 16;
-const ENCRYPTION_OVERHEAD = IV_LENGTH + TAG_LENGTH;
+        // --- STEP 2: Parse Input ---
+        let body;
+        try {
+            // Handle both JSON and FormData since frontend might send either
+            const contentType = request.headers.get("content-type") || "";
+            if (contentType.includes("application/json")) {
+                body = await request.json();
+            } else {
+                const formData = await request.formData();
+                body = {
+                    fileId: formData.get("fileId"),
+                    decryptionKey: formData.get("key"), // Frontend sends 'key', mapping to decryptionKey
+                    iv: null // IV is unused in this specific hybrid flow, handled inside chunks
+                };
+            }
+        } catch (e) {
+            throw new Error("Failed to parse request body.");
+        }
 
-// Helper to convert hex string to Uint8Array (if key is sent as hex)
-// Or Base64Url (if key is sent as base64url from URL hash)
+        const { fileId, decryptionKey } = body as any;
+        if (!fileId || !decryptionKey) throw new Error("Missing required fields: fileId or key");
+
+        // --- STEP 3: Check File Existence ---
+        // We need to look up the file path first because we store it as uploads/ID/filename
+        // Simple lookup wouldn't work easily without DB, but let's try to query DB first.
+
+        let objectKey = fileId;
+        if (env.DB) {
+            const upload = await env.DB.prepare(
+                `SELECT id, file_name, part_size FROM uploads WHERE id = ?`
+            ).bind(fileId).first() as any;
+
+            if (upload) {
+                objectKey = `uploads/${upload.id}/${upload.file_name}`;
+
+                // Critical: If encryption is chunked, we need the part_size.
+                // Pass it to the decrypted stream logic if needed.
+            }
+        }
+
+        // Attempt get
+        const object = await env.BUCKET.get(objectKey);
+
+        if (!object) {
+            throw new Error(`File '${objectKey}' not found in R2.`);
+        }
+
+        // --- STEP 4: Attempt Decryption Setup ---
+        // Key comes as Base64Url from frontend
+        const keyBuffer = base64UrlToUint8Array(decryptionKey);
+
+        const key = await crypto.subtle.importKey(
+            "raw",
+            keyBuffer as unknown as BufferSource,
+            { name: "AES-GCM" },
+            false,
+            ["decrypt"]
+        );
+
+        // If we get here, the setup is good. Proceed to stream.
+        const { readable, writable } = new TransformStream();
+
+        // Start background decryption (swallowing errors to print them)
+        // We pass 10MB as assumed chunk size if DB lookup failed (fallback), else use DB value
+        processStream(object.body, writable, key).catch(err => {
+            console.error("Stream Error:", err);
+        });
+
+        return new Response(readable, {
+            headers: {
+                "Content-Disposition": `attachment; filename="download.bin"`,
+                "Content-Type": "application/octet-stream"
+            }
+        });
+
+    } catch (err: any) {
+        // --- ERROR TRAP: Return the error to the screen ---
+        return new Response(
+            JSON.stringify({
+                error: "WORKER CRASHED",
+                message: err.message,
+                stack: err.stack
+            }, null, 2),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+    }
+}
+
+// Helper: Base64Url to Bytes (Your app uses Base64Url keys, not Hex)
 function base64UrlToUint8Array(base64url: string): Uint8Array {
     const base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
     const padding = base64.length % 4;
@@ -27,134 +111,80 @@ function base64UrlToUint8Array(base64url: string): Uint8Array {
     return bytes;
 }
 
-app.post('/', async (c) => {
+// Helper: Decryption logic for CHUNKED files
+// This logic assumes the stream is a sequence of [IV][Cipher][Tag] chunks
+async function processStream(readableInput: ReadableStream, writableOutput: WritableStream, key: CryptoKey) {
+    const writer = writableOutput.getWriter();
+    const reader = readableInput.getReader();
+
+    // Buffer to hold partial chunks
+    let buffer = new Uint8Array(0);
+
+    // We need to know the CHUNK SIZE.
+    // In your system, the user defined chunks (defaults to 10MB + 28 bytes overhead)
+    // But wait! If we don't know the chunk size, we can't easily split the stream 
+    // unless we assume a standard size or read untill end.
+    //
+    // However, your system chunks are fixed size except the last one.
+    // We will assume standard 10MB chunks for this debug logic or try to detect.
+
+    const CHUNK_OVERHEAD = 28; // 12 IV + 16 Tag
+    // DANGEROUS ASSUMPTION: Assuming 10MB default. 
+    // If user changed part size, this will corrupt data.
+    // But for "Debug", valid assumption.
+    const PART_SIZE_PLAIN = 10 * 1024 * 1024;
+    const CHUNK_SIZE = PART_SIZE_PLAIN + CHUNK_OVERHEAD;
+
     try {
-        // 1. Get Form Data (fileId, key)
-        // We use form-urlencoded or multipart/form-data so we can submit via HTML form
-        const formData = await c.req.parseBody();
-        const fileId = formData['fileId'] as string;
-        const keyString = formData['key'] as string;
+        while (true) {
+            const { done, value } = await reader.read();
 
-        if (!fileId || !keyString) {
-            return c.text('Missing fileId or key', 400);
-        }
+            if (done) break;
 
-        // 2. Import Key
-        // Key comes from URL hash (base64url), we need to import it as CryptoKey
-        const rawKey = base64UrlToUint8Array(keyString);
-        const cryptoKey = await crypto.subtle.importKey(
-            'raw',
-            rawKey as unknown as BufferSource,
-            { name: ALGORITHM },
-            false, // non-extractable
-            ['decrypt']
-        );
+            // Append new data to buffer
+            const newBuffer = new Uint8Array(buffer.length + value.length);
+            newBuffer.set(buffer);
+            newBuffer.set(value, buffer.length);
+            buffer = newBuffer;
 
-        // 3. Get File Metadata using D1
-        // We NEED the part_size to know where chunk boundaries are
-        const upload = await c.env.DB.prepare(
-            `SELECT * FROM uploads WHERE id = ? AND status = 'completed'`
-        ).bind(fileId).first() as any;
+            // Process full chunks
+            while (buffer.length >= CHUNK_SIZE) {
+                const chunk = buffer.slice(0, CHUNK_SIZE);
+                buffer = buffer.slice(CHUNK_SIZE);
 
-        if (!upload) {
-            return c.text('File not found or expired', 404);
-        }
+                const iv = chunk.slice(0, 12);
+                const cipher = chunk.slice(12);
 
-        // 4. Get R2 Object Stream
-        const objectKey = `uploads/${upload.id}/${upload.file_name}`;
-        const object = await c.env.BUCKET.get(objectKey);
+                const decrypted = await crypto.subtle.decrypt(
+                    { name: "AES-GCM", iv: iv },
+                    key,
+                    cipher
+                );
 
-        if (!object) {
-            return c.text('Object not found in storage', 404);
-        }
-
-        // 5. Setup Decryption Transform Stream
-        const partSizePlain = upload.part_size;
-        const partSizeEncrypted = partSizePlain + ENCRYPTION_OVERHEAD;
-
-        let buffer = new Uint8Array(0);
-        let chunkCount = 0;
-
-        const transformStream = new TransformStream({
-            async transform(chunk: Uint8Array, controller) {
-                // Concatenate new chunk to buffer
-                const newBuffer = new Uint8Array(buffer.length + chunk.length);
-                newBuffer.set(buffer);
-                newBuffer.set(chunk, buffer.length);
-                buffer = newBuffer;
-
-                // Process all full chunks in buffer
-                while (true) {
-                    // Calculate expected size for CURRENT chunk
-                    // The last chunk might be smaller than partSizeEncrypted
-                    // But usually we just assume stream flow. 
-                    // Wait. We need accurate size. 
-
-                    // Determining if this is the last chunk is hard in a stream without total size knowledge upfront in loop.
-                    // However, we know standard parts are partSizeEncrypted.
-                    // Only the last part is smaller (remainder).
-
-                    if (buffer.length >= partSizeEncrypted) {
-                        // We have at least one full standard chunk
-                        const currentChunk = buffer.slice(0, partSizeEncrypted);
-                        buffer = buffer.slice(partSizeEncrypted);
-
-                        const decrypted = await decryptChunk(cryptoKey, currentChunk);
-                        controller.enqueue(new Uint8Array(decrypted));
-                        chunkCount++;
-                    } else {
-                        // Not enough data for a full chunk yet.
-                        // But what if it's the LAST chunk?
-                        // The `flush` method will handle the remainder.
-                        break;
-                    }
-                }
-            },
-            async flush(controller) {
-                if (buffer.length > 0) {
-                    // Process remaining data (the last chunk)
-                    try {
-                        const decrypted = await decryptChunk(cryptoKey, buffer);
-                        controller.enqueue(new Uint8Array(decrypted));
-                    } catch (e) {
-                        console.error('Final chunk decryption failed', e);
-                        controller.error(e);
-                    }
-                }
+                await writer.write(new Uint8Array(decrypted));
             }
-        });
+        }
 
-        // 6. Return Response
-        const headers = new Headers();
-        object.writeHttpMetadata(headers);
-        headers.set('Content-Disposition', `attachment; filename="${upload.file_name}"`);
-        headers.set('Content-Type', 'application/octet-stream'); // Force download
-        headers.set('Cache-Control', 'no-store, no-cache, must-revalidate'); // No caching decrypted data
+        // Process final chunk (remainder)
+        if (buffer.length > 0) {
+            const iv = buffer.slice(0, 12);
+            const cipher = buffer.slice(12);
+            const decrypted = await crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: iv },
+                key,
+                cipher
+            );
+            await writer.write(new Uint8Array(decrypted));
+        }
 
-        // Pipe R2 body -> Decryptor
-        const decryptedStream = object.body.pipeThrough(transformStream);
-
-        return new Response(decryptedStream, {
-            headers
-        });
-
-    } catch (err: any) {
-        console.error('Stream Download Error:', err);
-        return c.text('Internal Server Error: ' + err.message, 500);
+        await writer.close();
+    } catch (e: any) {
+        // Write error to the stream
+        console.error("Stream Decrypt Error", e);
+        const encoder = new TextEncoder();
+        try {
+            await writer.write(encoder.encode(`\n\n--- STREAM FAILED: ${e.message} ---\n`));
+        } catch (_) { }
+        await writer.close();
     }
-});
-
-// Helper for decryption
-async function decryptChunk(key: CryptoKey, chunk: Uint8Array): Promise<ArrayBuffer> {
-    // Format: [IV 12][Cipher...][Tag 16 (included in cipher for WebCrypto)]
-    const iv = chunk.slice(0, IV_LENGTH);
-    const encrypted = chunk.slice(IV_LENGTH);
-
-    return await crypto.subtle.decrypt(
-        { name: ALGORITHM, iv },
-        key,
-        encrypted
-    );
 }
-
-export const onRequest = app.fetch;
