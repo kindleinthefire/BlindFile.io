@@ -21,15 +21,17 @@ export async function onRequestPost({ request, env }: { request: Request, env: E
                 const formData = await request.formData();
                 body = {
                     fileId: formData.get("fileId"),
-                    decryptionKey: formData.get("key"), // Frontend sends 'key', mapping to decryptionKey
-                    iv: null // IV is unused in this specific hybrid flow, handled inside chunks
+                    decryptionKey: formData.get("key"),
+                    originalName: formData.get("originalName"),
+                    mimeType: formData.get("mimeType"),
+                    iv: null
                 };
             }
         } catch (e) {
             throw new Error("Failed to parse request body.");
         }
 
-        const { fileId, decryptionKey } = body as any;
+        const { fileId, decryptionKey, originalName, mimeType } = body as any;
         if (!fileId || !decryptionKey) throw new Error("Missing required fields: fileId or key");
 
         // --- STEP 3: Check File Existence ---
@@ -80,8 +82,8 @@ export async function onRequestPost({ request, env }: { request: Request, env: E
 
         return new Response(readable, {
             headers: {
-                "Content-Disposition": `attachment; filename="download.bin"`,
-                "Content-Type": "application/octet-stream"
+                "Content-Disposition": `attachment; filename="${originalName || 'download.bin'}"`,
+                "Content-Type": mimeType || "application/octet-stream"
             }
         });
 

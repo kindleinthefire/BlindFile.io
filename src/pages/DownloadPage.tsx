@@ -106,8 +106,20 @@ export default function DownloadPage() {
             keyInput.name = 'key';
             keyInput.value = encryptionKey;
 
+            const filenameInput = document.createElement('input');
+            filenameInput.type = 'hidden';
+            filenameInput.name = 'originalName';
+            filenameInput.value = fileInfo.fileName; // Using fileInfo.fileName as originalName
+
+            const mimeInput = document.createElement('input');
+            mimeInput.type = 'hidden';
+            mimeInput.name = 'mimeType';
+            mimeInput.value = fileInfo.contentType || 'application/octet-stream';
+
             form.appendChild(idInput);
             form.appendChild(keyInput);
+            form.appendChild(filenameInput);
+            form.appendChild(mimeInput);
             document.body.appendChild(form);
             form.submit();
             document.body.removeChild(form);
