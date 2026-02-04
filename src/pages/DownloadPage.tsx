@@ -32,6 +32,7 @@ export default function DownloadPage() {
     const [fileInfo, setFileInfo] = useState<DownloadInfo | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
+    const [downloadProgress, setDownloadProgress] = useState(0);
     const [encryptionKey, setEncryptionKey] = useState<string | null>(null);
     const downloadManager = useRef<FileDownloader | null>(null);
 
@@ -82,6 +83,7 @@ export default function DownloadPage() {
         try {
             setStatus('decrypting');
             setProgress(0);
+            setDownloadProgress(0);
 
             // Import the encryption key
             const key = await importKey(encryptionKey);
@@ -91,11 +93,14 @@ export default function DownloadPage() {
             }
 
             // Initialize File Downloader
+            // @ts-ignore - We are adding a new callback that FileDownloader supports (will update class next)
             downloadManager.current = new FileDownloader(fileInfo, key, {
                 onProgress: (p: number) => setProgress(Number(p.toFixed(1))),
+                onDownloadProgress: (p: number) => setDownloadProgress(Number(p.toFixed(1))),
                 onComplete: () => {
                     setStatus('complete');
                     setProgress(100);
+                    setDownloadProgress(100);
                 },
                 onError: (err: Error) => {
                     setStatus('error');
@@ -278,24 +283,43 @@ export default function DownloadPage() {
                                     <Lock className="w-8 h-8 text-deep-purple animate-pulse" />
                                 </div>
                                 <h2 className="text-xl font-bold text-silver mb-2">
-                                    Decrypting...
+                                    Downloading & Decrypting...
                                 </h2>
                                 <p className="text-silver/60 text-sm mb-6">
-                                    Your file is being decrypted locally in your browser.
+                                    Your file is being streamed and decrypted on the fly.
                                 </p>
 
-                                {/* Progress bar */}
-                                <div className="w-full h-2 bg-stealth-700 rounded-full overflow-hidden">
-                                    <motion.div
-                                        className="h-full bg-gradient-to-r from-deep-purple to-success"
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${progress}%` }}
-                                        transition={{ duration: 0.3 }}
-                                    />
+                                {/* Download Progress bar */}
+                                <div className="mb-4 text-left">
+                                    <div className="flex justify-between text-xs text-silver/60 mb-1">
+                                        <span>Download</span>
+                                        <span>{downloadProgress}%</span>
+                                    </div>
+                                    <div className="w-full h-2 bg-stealth-700 rounded-full overflow-hidden">
+                                        <motion.div
+                                            className="h-full bg-blue-500"
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${downloadProgress}%` }}
+                                            transition={{ duration: 0.1 }} // Fast updates for network
+                                        />
+                                    </div>
                                 </div>
-                                <p className="text-xs text-silver/50 mt-2 font-mono">
-                                    {progress}%
-                                </p>
+
+                                {/* Decryption Progress bar */}
+                                <div className="text-left">
+                                    <div className="flex justify-between text-xs text-silver/60 mb-1">
+                                        <span>Decryption</span>
+                                        <span>{progress}%</span>
+                                    </div>
+                                    <div className="w-full h-2 bg-stealth-700 rounded-full overflow-hidden">
+                                        <motion.div
+                                            className="h-full bg-gradient-to-r from-deep-purple to-success"
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${progress}%` }}
+                                            transition={{ duration: 0.3 }}
+                                        />
+                                    </div>
+                                </div>
                             </motion.div>
                         )}
 

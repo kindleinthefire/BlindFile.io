@@ -9,6 +9,7 @@ export class FileDownloader {
     private fileInfo: DownloadInfo;
     private key: CryptoKey;
     private onProgress?: (percent: number) => void;
+    private onDownloadProgress?: (percent: number) => void;
     private onComplete?: () => void;
     private onError?: (error: Error) => void;
     private abortController: AbortController;
@@ -20,6 +21,7 @@ export class FileDownloader {
         key: CryptoKey,
         callbacks?: {
             onProgress?: (percent: number) => void;
+            onDownloadProgress?: (percent: number) => void;
             onComplete?: () => void;
             onError?: (error: Error) => void;
         }
@@ -27,6 +29,7 @@ export class FileDownloader {
         this.fileInfo = fileInfo;
         this.key = key;
         this.onProgress = callbacks?.onProgress;
+        this.onDownloadProgress = callbacks?.onDownloadProgress;
         this.onComplete = callbacks?.onComplete;
         this.onError = callbacks?.onError;
         this.abortController = new AbortController();
@@ -87,6 +90,7 @@ export class FileDownloader {
         const totalParts = Math.ceil(this.fileInfo.fileSize / partSize);
         let processedBytes = 0;
         let currentEncryptedOffset = 0;
+        let currentDownloadedBytes = 0;
 
         // Pipelining Setup
         // We fetch the next chunk while processing the current one
@@ -104,32 +108,45 @@ export class FileDownloader {
                 throw new Error(`Failed to fetch part ${i}`);
             }
 
-            // Update offset for the NEXT part calculation
+            // Calculations for Next Loop
             const isLastPart = i === totalParts - 1;
             const plainSize = isLastPart
                 ? this.fileInfo.fileSize - (i * partSize)
                 : partSize;
 
-            currentEncryptedOffset += (plainSize + ENCRYPTION_OVERHEAD);
+            // This is the offset where the NEXT chunk will start
+            // Note: plainSize is what we will get after decrypting THIS chunk.
+            const nextOffset = currentEncryptedOffset + (plainSize + ENCRYPTION_OVERHEAD);
 
             // 2. Start NEXT fetch immediately (if more parts exist)
             if (i < totalParts - 1) {
                 const isNextLast = (i + 1) === totalParts - 1;
-
-                // Recalculate robustly for next part
-                // We passed calculated currentEncryptedOffset which is now pointing to start of next
-                nextFetchPromise = this.fetchChunk(i + 1, partSize, currentEncryptedOffset, isNextLast);
+                // We use nextOffset for the next fetch
+                nextFetchPromise = this.fetchChunk(i + 1, partSize, nextOffset, isNextLast);
             } else {
                 nextFetchPromise = null;
             }
 
             // 3. Process Current Chunk (CPU + Disk IO)
             const encryptedData = await response.arrayBuffer();
+
+            // Update DOWNLOAD Progress (Chunk fully arrived)
+            currentDownloadedBytes += encryptedData.byteLength;
+            if (this.onDownloadProgress) {
+                // Est Total Encrypted Size = FileSize (Plain) + TotalOverhead
+                const totalOverhead = totalParts * ENCRYPTION_OVERHEAD;
+                const estTotalEncrypted = this.fileInfo.fileSize + totalOverhead;
+                this.onDownloadProgress(Math.min(100, (currentDownloadedBytes / estTotalEncrypted) * 100));
+            }
+
             const decryptedData = await decryptChunk(this.key, encryptedData);
 
             await writable.write(decryptedData);
 
-            // 4. Update Progress
+            // Update offset for next calculation
+            currentEncryptedOffset = nextOffset;
+
+            // 4. Update DECRYPTION Progress
             processedBytes += decryptedData.byteLength;
             if (this.onProgress) {
                 this.onProgress(Math.min(100, (processedBytes / this.fileInfo.fileSize) * 100));
