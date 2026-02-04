@@ -120,7 +120,7 @@ self.addEventListener('fetch', (event) => {
 
             const headers = new Headers();
             headers.set('Content-Type', 'application/octet-stream');
-            headers.set('Content-Disposition', `attachment; filename="${state.filename}"`);
+            headers.set('Content-Disposition', `attachment; filename="${state.filename.replace(/"/g, '\\"')}"`);
             if (state.size) {
                 headers.set('Content-Length', state.size.toString());
             }

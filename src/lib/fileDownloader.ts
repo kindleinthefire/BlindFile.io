@@ -76,11 +76,21 @@ export class FileDownloader {
 
         // 1. Request file handle
         // @ts-ignore - showSaveFilePicker is not in all TS defs yet
+        const fileExtension = this.fileInfo.fileName.split('.').pop();
+        const mimeType = this.fileInfo.contentType || 'application/octet-stream';
+
+        const accept: Record<string, string[]> = {};
+        if (fileExtension) {
+            accept[mimeType] = [`.${fileExtension}`];
+        } else {
+            accept['application/octet-stream'] = ['.bin'];
+        }
+
         const handle = await window.showSaveFilePicker({
             suggestedName: this.fileInfo.fileName,
             types: [{
-                description: 'Encrypted File',
-                accept: { 'application/octet-stream': [] } // Generic type
+                description: 'File',
+                accept: accept
             }]
         });
 
