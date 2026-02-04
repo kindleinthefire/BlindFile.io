@@ -6,6 +6,8 @@ import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
 import { ThreeBackground } from '../components/ThreeBackground';
 
+import { Link } from 'react-router-dom';
+
 export default function HomePage() {
     const { upload, pause, resume, cancel } = useFileUploader();
     const { getAllFiles } = useUploadStore();
@@ -61,12 +63,12 @@ export default function HomePage() {
 
                 {/* Nav */}
                 <nav className="hidden md:flex items-center gap-8">
-                    <a
-                        href="#"
+                    <Link
+                        to="/auth"
                         className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
                     >
                         Sign Up
-                    </a>
+                    </Link>
                 </nav>
             </motion.header>
 
