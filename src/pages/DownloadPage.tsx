@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 import { CountdownTimer } from '../components/CountdownTimer';
 import { api, DownloadInfo } from '../lib/api';
-import { importKey, decryptChunk, formatBytes } from '../lib/crypto';
+import { importKey, formatBytes } from '../lib/crypto';
+import { DownloadStreamManager } from '../lib/downloadStream';
 
 type DownloadStatus =
     | 'loading'
@@ -32,6 +33,7 @@ export default function DownloadPage() {
     const [error, setError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [encryptionKey, setEncryptionKey] = useState<string | null>(null);
+    const downloadManager = useRef<DownloadStreamManager | null>(null);
 
     // Extract encryption key from URL hash
     useEffect(() => {
@@ -39,6 +41,15 @@ export default function DownloadPage() {
         if (hash) {
             setEncryptionKey(hash);
         }
+    }, []);
+
+    // Cleanup
+    useEffect(() => {
+        return () => {
+            if (downloadManager.current) {
+                downloadManager.current.cancel();
+            }
+        };
     }, []);
 
     // Fetch file info
@@ -75,33 +86,25 @@ export default function DownloadPage() {
             // Import the encryption key
             const key = await importKey(encryptionKey);
 
-            // Fetch the encrypted file
-            const response = await fetch(api.getDownloadUrl(id));
-            if (!response.ok) {
-                throw new Error('Failed to download file');
+            if (downloadManager.current) {
+                downloadManager.current.cancel();
             }
 
-            const encryptedData = await response.arrayBuffer();
-            setProgress(50);
+            // Initialize Download Stream Manager
+            downloadManager.current = new DownloadStreamManager(fileInfo, key, {
+                onProgress: (p) => setProgress(p),
+                onComplete: () => {
+                    setStatus('complete');
+                    setProgress(100);
+                },
+                onError: (err) => {
+                    setStatus('error');
+                    setError(err.message);
+                }
+            });
 
-            // Decrypt the file
-            const decryptedData = await decryptChunk(key, encryptedData);
-            setProgress(90);
+            await downloadManager.current.start();
 
-            // Create blob and download
-            const blob = new Blob([decryptedData], { type: fileInfo.contentType });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileInfo.fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            setProgress(100);
-            setStatus('complete');
         } catch (err) {
             const message =
                 err instanceof Error ? err.message : 'Decryption failed';

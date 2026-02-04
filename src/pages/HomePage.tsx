@@ -1,9 +1,10 @@
-import { useCallback } from 'react';
+import { useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, UploadCloud, Lock, ArrowRight } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
+import { ThreeBackground } from '../components/ThreeBackground';
 
 export default function HomePage() {
     const { upload, pause, resume, cancel } = useFileUploader();
@@ -37,28 +38,10 @@ export default function HomePage() {
     return (
         <div className="relative min-h-screen bg-black overflow-hidden flex flex-col font-sans selection:bg-purple-500/30 text-white">
 
-            {/* --- VISUAL BACKGROUND: Cyberpunk Arc --- */}
-            <div className="absolute inset-0 pointer-events-none z-0">
-                {/* The Purple Planet Arc - Bottom Third */}
-                <div
-                    className="absolute left-1/2 bottom-[-100vh] -translate-x-1/2 w-[200vw] h-[120vh] rounded-[100%]"
-                    style={{
-                        background: 'radial-gradient(circle at 50% 0%, #7c3aed 0%, #4c1d95 20%, #000000 60%)',
-                        filter: 'blur(60px)',
-                        opacity: 0.8
-                    }}
-                />
-
-                {/* Horizon Glow Line */}
-                <div
-                    className="absolute left-1/2 bottom-[-10%] -translate-x-1/2 w-[120vw] h-[200px]"
-                    style={{
-                        background: 'linear-gradient(to top, rgba(139,92,246,0.2), transparent)',
-                        filter: 'blur(40px)',
-                        borderRadius: '50% 50% 0 0'
-                    }}
-                />
-            </div>
+            {/* --- VISUAL BACKGROUND: Three.js Planet Arc --- */}
+            <Suspense fallback={<div className="absolute inset-0 bg-black" />}>
+                <ThreeBackground />
+            </Suspense>
 
             {/* --- HEADER --- */}
             <motion.header

@@ -469,10 +469,76 @@ app.get('/download/:id', async (c) => {
             contentType: upload.content_type,
             expiresAt: upload.expires_at,
             createdAt: upload.created_at,
+            partSize: upload.part_size,
         });
     } catch (error) {
         console.error('Download info error:', error);
         return c.json({ error: 'Failed to get download info' }, 500);
+    }
+});
+
+// ============================================
+// GET /api/download/:id/file - Download file content
+// ============================================
+app.get('/download/:id/file', async (c) => {
+    const env = c.env;
+    const id = c.req.param('id');
+    const rangeHeader = c.req.header('Range');
+
+    try {
+        const upload = (await env.DB.prepare(
+            `
+      SELECT * FROM uploads 
+      WHERE id = ? AND status = 'completed' AND expires_at > datetime('now')
+    `
+        )
+            .bind(id)
+            .first()) as Record<string, unknown> | null;
+
+        if (!upload) {
+            return c.json({ error: 'File not found or expired' }, 404);
+        }
+
+        const objectKey = `uploads/${upload.id}/${upload.file_name}`;
+
+        // Parse Range header if present
+        let range: { offset?: number; length?: number; suffix?: number } | undefined;
+        if (rangeHeader) {
+            // Basic range parsing (bytes=start-end)
+            const matches = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+            if (matches) {
+                const start = parseInt(matches[1]);
+                const end = matches[2] ? parseInt(matches[2]) : undefined;
+                range = { offset: start, length: end ? end - start + 1 : undefined };
+            }
+        }
+
+        const object = await env.BUCKET.get(objectKey, {
+            range: range as R2Range, // Cast or ensure strict type
+            onlyIf: { etagMatches: c.req.header('If-Match') },
+        });
+
+        if (!object) {
+            return c.json({ error: 'Object not found in R2' }, 404);
+        }
+
+        // Set headers
+        const headers = new Headers();
+        object.writeHttpMetadata(headers);
+        headers.set('etag', object.httpEtag);
+
+        if (rangeHeader) {
+            headers.set('Content-Range', `bytes ${range?.offset}-${range?.length ? range.offset! + range.length - 1 : object.size - 1
+                }/${object.size}`);
+            // partial content
+            c.status(206);
+        }
+
+        const objectBody = object as R2ObjectBody;
+        return c.body(objectBody.body, { headers });
+    } catch (error) {
+        console.error('Download file error:', error);
+        return c.json({ error: 'Failed to download file' }, 500);
     }
 });
 

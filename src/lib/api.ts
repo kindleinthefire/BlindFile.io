@@ -39,6 +39,7 @@ export interface DownloadInfo {
     contentType: string;
     expiresAt: string;
     createdAt: string;
+    partSize: number;
 }
 
 class ApiClient {
@@ -165,7 +166,7 @@ class ApiClient {
      * Get download URL
      */
     getDownloadUrl(id: string): string {
-        return `/download/${id}/file`;
+        return `${this.baseUrl}/download/${id}/file`;
     }
 }
 
