@@ -1,12 +1,16 @@
 import { useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, UploadCloud, ArrowRight } from 'lucide-react';
+import { UploadCloud, ArrowRight } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
 import { ThreeBackground } from '../components/ThreeBackground';
 
 import { Link } from 'react-router-dom';
+
+import logo from '../assets/logo.png';
+
+// ... (existing imports)
 
 export default function HomePage() {
     const { upload, pause, resume, cancel } = useFileUploader();
@@ -53,9 +57,11 @@ export default function HomePage() {
             >
                 {/* Logo */}
                 <div className="flex items-center gap-3 group cursor-pointer">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center shadow-lg shadow-purple-900/20 group-hover:scale-105 transition-transform duration-300">
-                        <FileText className="w-5 h-5 text-white" fill="currentColor" fillOpacity={0.2} />
-                    </div>
+                    <img
+                        src={logo}
+                        alt="Blind File Logo"
+                        className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300"
+                    />
                     <span className="font-bold text-xl tracking-wide text-white/90 group-hover:text-white transition-colors">
                         BLIND FILE
                     </span>
@@ -210,7 +216,7 @@ export default function HomePage() {
                 </AnimatePresence>
 
             </main>
-        </div>
+        </div >
     );
 }
 

@@ -8,7 +8,6 @@ import {
     File,
     Shield,
     ArrowLeft,
-    EyeOff,
     Loader2,
     Check,
 } from 'lucide-react';
@@ -16,6 +15,7 @@ import { CountdownTimer } from '../components/CountdownTimer';
 import { api, DownloadInfo } from '../lib/api';
 import { importKey, formatBytes } from '../lib/crypto';
 import { FileDownloader } from '../lib/fileDownloader';
+import logo from '../assets/logo.png';
 
 type DownloadStatus =
     | 'loading'
@@ -179,12 +179,14 @@ export default function DownloadPage() {
             >
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
-                        <Link to="/" className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-deep-purple to-success flex items-center justify-center">
-                                <EyeOff className="w-5 h-5 text-white" />
-                            </div>
+                        <Link to="/" className="flex items-center gap-3 group">
+                            <img
+                                src={logo}
+                                alt="Blind File Logo"
+                                className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300"
+                            />
                             <div>
-                                <h1 className="font-bold text-xl text-silver">Blind File</h1>
+                                <h1 className="font-bold text-xl text-silver group-hover:text-white transition-colors">Blind File</h1>
                                 <p className="text-xs text-silver/50">
                                     Zero-Knowledge Transfer
                                 </p>
