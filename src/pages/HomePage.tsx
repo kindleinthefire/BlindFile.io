@@ -105,12 +105,13 @@ export default function HomePage() {
                                 onDragOver={onDragOver}
                                 className="
                                     relative w-full aspect-video rounded-[2rem]
-                                    bg-purple-900/10 backdrop-blur-xl
-                                    border border-white/10
-                                    shadow-[0_0_60px_-15px_rgba(124,58,237,0.3)]
+                                    bg-gradient-to-br from-purple-500/20 via-purple-900/30 to-black/40
+                                    backdrop-blur-2xl
+                                    border border-purple-400/20
+                                    shadow-[0_0_60px_-15px_rgba(124,58,237,0.4)]
                                     group overflow-hidden
                                     flex flex-col items-center justify-center
-                                    transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_80px_-20px_rgba(124,58,237,0.5)]
+                                    transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_80px_-10px_rgba(124,58,237,0.6)] hover:border-purple-400/40
                                     cursor-pointer
                                 "
                                 onClick={() => document.getElementById('file-upload-hidden')?.click()}
@@ -171,9 +172,9 @@ export default function HomePage() {
                         >
                             {/* We use a modified container to match the 'Glass Panel' vibe, but taller for the list */}
                             <div className="
-                                bg-zinc-900/40 backdrop-blur-2xl 
-                                border border-white/10 rounded-[2rem] 
-                                p-8 shadow-2xl shadow-purple-900/20
+                                bg-gradient-to-br from-purple-900/40 via-black/80 to-purple-900/20 backdrop-blur-2xl 
+                                border border-purple-400/20 rounded-[2rem] 
+                                p-8 shadow-2xl shadow-purple-900/40
                             ">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-bold text-white">Active Transfers</h3>
