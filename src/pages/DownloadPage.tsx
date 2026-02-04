@@ -34,7 +34,16 @@ export default function DownloadPage() {
     const [progress, setProgress] = useState(0);
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [encryptionKey, setEncryptionKey] = useState<string | null>(null);
+    const [downloadMode, setDownloadMode] = useState<'desktop' | 'mobile'>('desktop');
     const downloadManager = useRef<FileDownloader | null>(null);
+
+    // Auto-detect Mobile (iOS/Android)
+    useEffect(() => {
+        const ua = navigator.userAgent;
+        if (/iPhone|iPad|iPod|Android/i.test(ua)) {
+            setDownloadMode('mobile');
+        }
+    }, []);
 
     // Extract encryption key from URL hash
     useEffect(() => {
@@ -80,6 +89,36 @@ export default function DownloadPage() {
     const handleDownload = async () => {
         if (!id || !fileInfo || !encryptionKey) return;
 
+        // --- MOBILE FLOW (Server-Side Stream) ---
+        if (downloadMode === 'mobile') {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/api/stream-download';
+            // form.target = '_blank'; // Optional: Open in new tab? Usually better to stay for downloads unless it replaces page
+
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'fileId';
+            idInput.value = id;
+
+            const keyInput = document.createElement('input');
+            keyInput.type = 'hidden';
+            keyInput.name = 'key';
+            keyInput.value = encryptionKey;
+
+            form.appendChild(idInput);
+            form.appendChild(keyInput);
+            document.body.appendChild(form);
+            form.submit();
+            document.body.removeChild(form);
+
+            // Show a "started" state briefly
+            setStatus('decrypting');
+            setTimeout(() => setStatus('complete'), 5000); // Fake completion since we can't track POST download progress
+            return;
+        }
+
+        // --- DESKTOP FLOW (Client-Side StreamSaver) ---
         try {
             setStatus('decrypting');
             setProgress(0);
@@ -93,7 +132,7 @@ export default function DownloadPage() {
             }
 
             // Initialize File Downloader
-            // @ts-ignore - We are adding a new callback that FileDownloader supports (will update class next)
+            // @ts-ignore
             downloadManager.current = new FileDownloader(fileInfo, key, {
                 onProgress: (p: number) => setProgress(Number(p.toFixed(1))),
                 onDownloadProgress: (p: number) => setDownloadProgress(Number(p.toFixed(1))),
@@ -140,13 +179,23 @@ export default function DownloadPage() {
                             </div>
                         </Link>
 
-                        <Link
-                            to="/"
-                            className="flex items-center gap-2 text-sm text-silver/60 hover:text-silver transition-colors"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                            Upload new file
-                        </Link>
+                        {/* MODE TOGGLE */}
+                        <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1">
+                            <button
+                                onClick={() => setDownloadMode('desktop')}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${downloadMode === 'desktop' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
+                                    }`}
+                            >
+                                Desktop
+                            </button>
+                            <button
+                                onClick={() => setDownloadMode('mobile')}
+                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${downloadMode === 'mobile' ? 'bg-purple-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
+                                    }`}
+                            >
+                                Mobile
+                            </button>
+                        </div>
                     </div>
                 </div>
             </motion.header>
