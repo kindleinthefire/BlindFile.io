@@ -31,12 +31,16 @@ export default function AuthPage() {
                 const { error } = await supabase.auth.signUp({
                     email,
                     password,
+                    options: {
+                        emailRedirectTo: window.location.origin,
+                    },
                 });
                 if (error) throw error;
                 setSuccessMsg('Check your email for the confirmation link!');
             }
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Authentication failed');
+            console.error('Auth Error Details:', err);
+            setError(err instanceof Error ? err.message : 'Authentication failed. Please check your network connection and Supabase settings.');
         } finally {
             setLoading(false);
         }
