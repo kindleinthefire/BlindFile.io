@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, CloudUpload, Lock, ArrowRight } from 'lucide-react';
+import { FileText, UploadCloud, Lock, ArrowRight } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
@@ -133,7 +133,7 @@ export default function HomePage() {
 
                                 {/* Content */}
                                 <div className="relative z-10 flex flex-col items-center text-center p-8">
-                                    <CloudUpload
+                                    <UploadCloud
                                         className="w-20 h-20 text-purple-400 mb-6 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-500"
                                         strokeWidth={1.5}
                                     />
