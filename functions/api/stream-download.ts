@@ -44,7 +44,7 @@ app.post('/', async (c) => {
         const rawKey = base64UrlToUint8Array(keyString);
         const cryptoKey = await crypto.subtle.importKey(
             'raw',
-            rawKey as any,
+            rawKey as unknown as BufferSource,
             { name: ALGORITHM },
             false, // non-extractable
             ['decrypt']
