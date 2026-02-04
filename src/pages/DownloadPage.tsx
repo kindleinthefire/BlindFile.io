@@ -15,7 +15,7 @@ import {
 import { CountdownTimer } from '../components/CountdownTimer';
 import { api, DownloadInfo } from '../lib/api';
 import { importKey, formatBytes } from '../lib/crypto';
-import { DownloadStreamManager } from '../lib/downloadStream';
+import { FileDownloader } from '../lib/fileDownloader';
 
 type DownloadStatus =
     | 'loading'
@@ -33,7 +33,7 @@ export default function DownloadPage() {
     const [error, setError] = useState<string | null>(null);
     const [progress, setProgress] = useState(0);
     const [encryptionKey, setEncryptionKey] = useState<string | null>(null);
-    const downloadManager = useRef<DownloadStreamManager | null>(null);
+    const downloadManager = useRef<FileDownloader | null>(null);
 
     // Extract encryption key from URL hash
     useEffect(() => {
@@ -90,14 +90,14 @@ export default function DownloadPage() {
                 downloadManager.current.cancel();
             }
 
-            // Initialize Download Stream Manager
-            downloadManager.current = new DownloadStreamManager(fileInfo, key, {
-                onProgress: (p) => setProgress(Number(p.toFixed(1))),
+            // Initialize File Downloader
+            downloadManager.current = new FileDownloader(fileInfo, key, {
+                onProgress: (p: number) => setProgress(Number(p.toFixed(1))),
                 onComplete: () => {
                     setStatus('complete');
                     setProgress(100);
                 },
-                onError: (err) => {
+                onError: (err: Error) => {
                     setStatus('error');
                     setError(err.message);
                 }

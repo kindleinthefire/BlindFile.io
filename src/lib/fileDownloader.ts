@@ -1,0 +1,176 @@
+import { DownloadInfo, api } from './api';
+import { decryptChunk } from './crypto';
+import { DownloadStreamManager } from './downloadStream';
+
+// Standard constant for GCM auth tag + IV overhead
+const ENCRYPTION_OVERHEAD = 28; // 12 bytes IV + 16 bytes Tag
+
+export class FileDownloader {
+    private fileInfo: DownloadInfo;
+    private key: CryptoKey;
+    private onProgress?: (percent: number) => void;
+    private onComplete?: () => void;
+    private onError?: (error: Error) => void;
+    private abortController: AbortController;
+    private streamManager: DownloadStreamManager | null = null;
+    private isCancelled = false;
+
+    constructor(
+        fileInfo: DownloadInfo,
+        key: CryptoKey,
+        callbacks?: {
+            onProgress?: (percent: number) => void;
+            onComplete?: () => void;
+            onError?: (error: Error) => void;
+        }
+    ) {
+        this.fileInfo = fileInfo;
+        this.key = key;
+        this.onProgress = callbacks?.onProgress;
+        this.onComplete = callbacks?.onComplete;
+        this.onError = callbacks?.onError;
+        this.abortController = new AbortController();
+    }
+
+    async start() {
+        try {
+            // Strategy 1: File System Access API (Chrome/Edge/Opera)
+            // This is the fastest method as it writes directly to disk
+            if ('showSaveFilePicker' in window) {
+                await this.downloadViaFileSystem();
+            } else {
+                // Strategy 2: Service Worker Stream (Firefox/Safari/Fallback)
+                // This simulates a stream download
+                await this.downloadViaServiceWorker();
+            }
+        } catch (error) {
+            if (this.isCancelled) return;
+
+            // If user cancelled picker, don't error
+            if (error instanceof Error && error.name === 'AbortError') {
+                return;
+            }
+
+            if (this.onError) {
+                this.onError(error instanceof Error ? error : new Error('Download failed'));
+            }
+        }
+    }
+
+    cancel() {
+        this.isCancelled = true;
+        this.abortController.abort();
+        if (this.streamManager) {
+            this.streamManager.cancel();
+        }
+    }
+
+    // ==========================================
+    // STRATEGY 1: File System Access API
+    // ==========================================
+    private async downloadViaFileSystem() {
+        console.log('Using File System Access API');
+
+        // 1. Request file handle
+        // @ts-ignore - showSaveFilePicker is not in all TS defs yet
+        const handle = await window.showSaveFilePicker({
+            suggestedName: this.fileInfo.fileName,
+            types: [{
+                description: 'Encrypted File',
+                accept: { 'application/octet-stream': [] } // Generic type
+            }]
+        });
+
+        const writable = await handle.createWritable();
+
+        const partSize = this.fileInfo.partSize || this.fileInfo.fileSize;
+        const totalParts = Math.ceil(this.fileInfo.fileSize / partSize);
+        let processedBytes = 0;
+        let currentEncryptedOffset = 0;
+
+        // Pipelining Setup
+        // We fetch the next chunk while processing the current one
+        let nextFetchPromise: Promise<Response> | null = this.fetchChunk(0, partSize, currentEncryptedOffset, totalParts === 1);
+
+        for (let i = 0; i < totalParts; i++) {
+            if (this.isCancelled) {
+                await writable.close();
+                throw new Error('Cancelled');
+            }
+
+            // 1. Await the fetch that we started in previous iteration
+            const response = await nextFetchPromise;
+            if (!response || !response.ok) {
+                throw new Error(`Failed to fetch part ${i}`);
+            }
+
+            // Update offset for the NEXT part calculation
+            const isLastPart = i === totalParts - 1;
+            const plainSize = isLastPart
+                ? this.fileInfo.fileSize - (i * partSize)
+                : partSize;
+
+            currentEncryptedOffset += (plainSize + ENCRYPTION_OVERHEAD);
+
+            // 2. Start NEXT fetch immediately (if more parts exist)
+            if (i < totalParts - 1) {
+                const isNextLast = (i + 1) === totalParts - 1;
+
+                // Recalculate robustly for next part
+                // We passed calculated currentEncryptedOffset which is now pointing to start of next
+                nextFetchPromise = this.fetchChunk(i + 1, partSize, currentEncryptedOffset, isNextLast);
+            } else {
+                nextFetchPromise = null;
+            }
+
+            // 3. Process Current Chunk (CPU + Disk IO)
+            const encryptedData = await response.arrayBuffer();
+            const decryptedData = await decryptChunk(this.key, encryptedData);
+
+            await writable.write(decryptedData);
+
+            // 4. Update Progress
+            processedBytes += decryptedData.byteLength;
+            if (this.onProgress) {
+                this.onProgress(Math.min(100, (processedBytes / this.fileInfo.fileSize) * 100));
+            }
+        }
+
+        await writable.close();
+        if (this.onComplete) this.onComplete();
+    }
+
+    private fetchChunk(partIndex: number, partSize: number, startOffset: number, isLastPart: boolean): Promise<Response> {
+        // Calculate size of this PART's plaintext
+        const plainSize = isLastPart
+            ? this.fileInfo.fileSize - (partIndex * partSize)
+            : partSize;
+
+        const encryptedSize = plainSize + ENCRYPTION_OVERHEAD;
+        const end = startOffset + encryptedSize - 1;
+
+        return fetch(api.getDownloadUrl(this.fileInfo.id), {
+            headers: {
+                'Range': `bytes=${startOffset}-${end}`
+            },
+            signal: this.abortController.signal
+        });
+    }
+
+    // ==========================================
+    // STRATEGY 2: Service Worker Fallback
+    // ==========================================
+    private async downloadViaServiceWorker() {
+        console.log('Falling back to Service Worker Stream');
+        this.streamManager = new DownloadStreamManager(
+            this.fileInfo,
+            this.key,
+            {
+                onProgress: this.onProgress,
+                onComplete: this.onComplete,
+                onError: this.onError
+            }
+        );
+        await this.streamManager.start();
+    }
+}
