@@ -47,7 +47,7 @@ void main() {
 function Planet() {
     const meshRef = useRef<THREE.Mesh>(null);
 
-    useFrame((state) => {
+    useFrame(() => {
         if (meshRef.current) {
             // Subtle slow rotation
             meshRef.current.rotation.z += 0.0002;
