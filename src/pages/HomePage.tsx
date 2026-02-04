@@ -84,6 +84,13 @@ export default function HomePage() {
                             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                             className="flex flex-col items-center gap-8 w-full max-w-lg"
                         >
+                            {/* HERO TEXT - Above Card */}
+                            <div className="text-center space-y-2 mb-2">
+                                <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight drop-shadow-xl">
+                                    Free 1GB Sends. <span className="text-purple-400">Forever.</span>
+                                </h1>
+                            </div>
+
                             {/* THE GLASS PANEL */}
                             <div
                                 onDrop={onDrop}
@@ -139,6 +146,11 @@ export default function HomePage() {
                                     }}
                                 />
                             </div>
+
+                            {/* SUB TEXT - Below Card */}
+                            <p className="text-white/40 text-sm font-medium tracking-widest uppercase">
+                                No Sign Up Required
+                            </p>
 
                         </motion.div>
                     ) : (
