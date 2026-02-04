@@ -1,6 +1,6 @@
 import { useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, UploadCloud, Lock, ArrowRight } from 'lucide-react';
+import { FileText, UploadCloud, ArrowRight } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
@@ -61,15 +61,12 @@ export default function HomePage() {
 
                 {/* Nav */}
                 <nav className="hidden md:flex items-center gap-8">
-                    {['Home', 'Files', 'History', 'Account'].map((item, i) => (
-                        <a
-                            key={item}
-                            href="#"
-                            className={`text-sm font-medium transition-colors hover:text-purple-400 ${i === 0 ? 'text-white' : 'text-zinc-500'}`}
-                        >
-                            {item}
-                        </a>
-                    ))}
+                    <a
+                        href="#"
+                        className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
+                    >
+                        Sign Up
+                    </a>
                 </nav>
             </motion.header>
 
@@ -141,12 +138,6 @@ export default function HomePage() {
                                         e.target.value = '';
                                     }}
                                 />
-                            </div>
-
-                            {/* BUTTONS */}
-                            <div className="flex w-full gap-4">
-                                <GlassPillButton label="Recent Uploads" />
-                                <GlassPillButton label="Secure Vault" icon={<Lock className="w-4 h-4 ml-2" />} />
                             </div>
 
                         </motion.div>
