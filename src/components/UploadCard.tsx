@@ -12,7 +12,7 @@ import {
     ExternalLink,
 } from 'lucide-react';
 import { UploadFile } from '../store/uploadStore';
-import { formatBytes, formatSpeed, formatTimeRemaining } from '../lib/crypto';
+import { formatBytes, formatTimeRemaining } from '../lib/crypto';
 import { useState } from 'react';
 
 interface UploadCardProps {
@@ -168,11 +168,8 @@ export function UploadCard({ file, onPause, onResume, onCancel }: UploadCardProp
 
                 {/* Stats */}
                 {isActive && (
-                    <div className="flex items-center justify-between text-xs mb-3">
+                    <div className="flex items-center justify-end text-xs mb-3">
                         <div className="flex items-center gap-4">
-                            <span className="text-silver/50">
-                                Speed: <span className="font-mono text-success">{formatSpeed(file.speed)}</span>
-                            </span>
                             <span className="text-silver/50">
                                 ETA: <span className="font-mono text-silver">{formatTimeRemaining(file.timeRemaining)}</span>
                             </span>

@@ -62,6 +62,10 @@ export async function uploadFile(
         const pool: Set<Promise<any>> = new Set();
         const completedParts: Array<{ partNumber: number; etag: string }> = [];
 
+        // Progress tracking
+        const startTime = Date.now();
+        let uploadedBytes = 0;
+
         let partNumber = 1;
 
         // 2. THE LOOP LOGIC
@@ -71,8 +75,6 @@ export async function uploadFile(
             // a. Check activeUploads. If >= MAX, await one to finish.
             if (pool.size >= MAX_CONCURRENT_UPLOADS) {
                 await Promise.race(pool);
-                // Clean up finished promises is handled by the .then() attached to them or explicit filtering?
-                // Set.delete happens in the .finally of the promise wrapper
             }
 
             // b. reader.read() the next chunk from disk.
@@ -80,6 +82,7 @@ export async function uploadFile(
             if (done || !chunkBuffer) break;
 
             const currentPartNumber = partNumber++;
+            const currentChunkSize = chunkBuffer.byteLength;
 
             // c. Encrypt the chunk immediately.
             const encryptedChunk = await encryptChunk(encryptionKey, chunkBuffer);
@@ -102,11 +105,11 @@ export async function uploadFile(
 
                         return {
                             partNumber: currentPartNumber,
-                            etag: result.etag
+                            etag: result.etag,
+                            size: currentChunkSize // Use original size for progress or encrypted size? Typically progress is user-facing (original)
                         };
                     } catch (err) {
                         lastError = err;
-                        // Wait before retry (exponential backoff could be added here)
                         await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
                     }
                 }
@@ -116,17 +119,24 @@ export async function uploadFile(
             // Wrapper to handle pool cleanup and progress
             const pooledPromise = uploadPromise
                 .then((result) => {
-                    completedParts.push(result);
+                    completedParts.push({ partNumber: result.partNumber, etag: result.etag });
 
-                    // Update progress
-                    // Note: Simplified progress calculation for brevity, assume linear
+                    // Update progress metrics
+                    uploadedBytes += result.size;
+                    const elapsedSeconds = (Date.now() - startTime) / 1000;
+                    const speed = elapsedSeconds > 0 ? uploadedBytes / elapsedSeconds : 0;
+                    const remainingBytes = file.size - uploadedBytes;
+                    const timeRemaining = speed > 0 ? remainingBytes / speed : 0;
+
                     const percent = (completedParts.length / initResponse.totalParts) * 100;
+
                     updateFile(fileId, {
                         uploadProgress: percent,
-                        encryptionProgress: percent, // "Encryption Progress" tied to "Upload Progress"
-                        completedParts: completedParts.length
+                        encryptionProgress: percent,
+                        completedParts: completedParts.length,
+                        speed,
+                        timeRemaining
                     });
-                    // 3. MEMORY SAFETY: Explicit GC hints (variable cleanup happens naturally as scope closes)
                 })
                 .finally(() => {
                     pool.delete(pooledPromise);
