@@ -107,6 +107,14 @@ export class DownloadStreamManager {
 
         // The SW will intercept this request.
         // Then it will send 'PULL' messages to channel.port1
+
+        // Safety: If for some reason SW message is lost or instant, grant 1 credit to start
+        setTimeout(() => {
+            if (this.credits === 0) {
+                this.credits = 1;
+                this.processQueue();
+            }
+        }, 1000);
     }
 
     private async handleMessage(event: MessageEvent) {

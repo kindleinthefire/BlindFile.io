@@ -21,16 +21,19 @@ self.addEventListener('message', (event) => {
 
         // Store client to send PULL requests back
         const client = event.source;
+        // Prefer the dedicated channel port if provided
+        const port = event.ports[0];
 
         streamControllers.set(url, {
             filename,
             size,
             controller: null,
             client,
+            port,
             isClosed: false
         });
 
-        if (event.ports[0]) event.ports[0].postMessage('OK');
+        if (port) port.postMessage('OK');
     }
 
     // 2. Enqueue Chunk
@@ -89,19 +92,26 @@ self.addEventListener('fetch', (event) => {
                 start(controller) {
                     state.controller = controller;
                     // Signal main thread to start/send first chunk
-                    if (state.client) {
+                    if (state.port) {
+                        state.port.postMessage({ type: 'PULL', url: url.pathname });
+                    } else if (state.client) {
                         state.client.postMessage({ type: 'PULL', url: url.pathname });
                     }
                 },
                 pull(controller) {
                     // Backpressure: This is called when the queue is low
-                    if (state.client && !state.isClosed) {
-                        // We check desiredSize to be safe, but pull() implies we need data
-                        state.client.postMessage({ type: 'PULL', url: url.pathname });
+                    if (!state.isClosed) {
+                        if (state.port) {
+                            state.port.postMessage({ type: 'PULL', url: url.pathname });
+                        } else if (state.client) {
+                            state.client.postMessage({ type: 'PULL', url: url.pathname });
+                        }
                     }
                 },
                 cancel() {
-                    if (state.client) {
+                    if (state.port) {
+                        state.port.postMessage({ type: 'CANCEL', url: url.pathname });
+                    } else if (state.client) {
                         state.client.postMessage({ type: 'CANCEL', url: url.pathname });
                     }
                     streamControllers.delete(url.pathname);

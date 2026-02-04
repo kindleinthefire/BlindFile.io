@@ -92,7 +92,7 @@ export default function DownloadPage() {
 
             // Initialize Download Stream Manager
             downloadManager.current = new DownloadStreamManager(fileInfo, key, {
-                onProgress: (p) => setProgress(p),
+                onProgress: (p) => setProgress(Number(p.toFixed(1))),
                 onComplete: () => {
                     setStatus('complete');
                     setProgress(100);
