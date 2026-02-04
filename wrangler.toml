@@ -7,6 +7,8 @@ pages_build_output_dir = "dist"
 
 [vars]
 ENVIRONMENT = "production"
+VITE_SUPABASE_URL = "https://idrkebrweejltxyqaqjm.supabase.co"
+VITE_SUPABASE_ANON_KEY = "sb_publishable_pricRleOnHVSp4ic4EaInA_3X5_Wbv_"
 
 # R2 Bucket Binding
 [[r2_buckets]]
