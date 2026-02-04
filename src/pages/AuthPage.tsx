@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Lock, Loader2, Sparkles } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 export default function AuthPage() {
     const [isLogin, setIsLogin] = useState(false); // Default to Sign Up
@@ -76,6 +77,9 @@ export default function AuthPage() {
                         p-8 shadow-2xl shadow-purple-900/20
                     ">
                         <div className="text-center mb-8">
+                            <div className="flex justify-center mb-6">
+                                <img src={logo} alt="Blind File Logo" className="w-16 h-16 object-contain" />
+                            </div>
                             <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70 mb-2">
                                 {isLogin ? 'Welcome Back' : 'Create Account'}
                             </h2>

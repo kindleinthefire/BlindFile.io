@@ -1,11 +1,13 @@
 import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Zap, Clock, Eye, EyeOff, Github } from 'lucide-react';
+import { Shield, Zap, Clock, Eye, Github } from 'lucide-react';
 import { DropZone } from '../components/DropZone';
 import { UploadCard } from '../components/UploadCard';
 import { UploadStats } from '../components/UploadStats';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
+
+import logo from '../assets/logo.png';
 
 export default function LegacyAppPage() {
     const { upload, pause, resume, cancel } = useFileUploader();
@@ -32,9 +34,11 @@ export default function LegacyAppPage() {
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-deep-purple to-success flex items-center justify-center">
-                                <EyeOff className="w-5 h-5 text-white" />
-                            </div>
+                            <img
+                                src={logo}
+                                alt="Blind File Logo"
+                                className="w-10 h-10 object-contain"
+                            />
                             <div>
                                 <h1 className="font-bold text-xl text-silver">Blind File</h1>
                                 <p className="text-xs text-silver/50">
