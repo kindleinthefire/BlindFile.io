@@ -105,7 +105,8 @@ export default function HomePage() {
                     </Link>
 
                     {/* Desktop Nav (Column Layout for Auth + Menu) */}
-                    <nav className="flex flex-col items-end gap-3">
+                    {/* Desktop Nav (Column Layout for Auth + Menu) */}
+                    <nav className="flex flex-col items-center gap-3">
                         {/* 1. Auth / Profile Link */}
                         <div className="mb-1">
                             {session ? (
@@ -149,7 +150,7 @@ export default function HomePage() {
                                         initial={{ opacity: 0, y: -10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                        className="absolute top-full right-0 mt-3 w-48 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-2xl z-50 overflow-hidden"
+                                        className="absolute top-full right-1/2 translate-x-1/2 mt-3 w-48 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-2xl z-50 overflow-hidden"
                                     >
                                         {MENU_ITEMS.map((item) => (
                                             <Link
@@ -161,6 +162,26 @@ export default function HomePage() {
                                                 {item.label}
                                             </Link>
                                         ))}
+                                        <div className="border-t border-white/10 my-1" />
+                                        {session ? (
+                                            <button
+                                                onClick={() => {
+                                                    supabase.auth.signOut();
+                                                    setIsDesktopMenuOpen(false);
+                                                }}
+                                                className="block w-full text-left py-2 px-4 text-sm font-medium text-red-400 hover:bg-white/5 rounded-lg transition-colors"
+                                            >
+                                                Sign Out
+                                            </button>
+                                        ) : (
+                                            <Link
+                                                to="/auth"
+                                                className="block w-full text-left py-2 px-4 text-sm font-medium text-white hover:bg-white/5 hover:text-purple-300 rounded-lg transition-colors"
+                                                onClick={() => setIsDesktopMenuOpen(false)}
+                                            >
+                                                Login
+                                            </Link>
+                                        )}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -239,6 +260,27 @@ export default function HomePage() {
                                         {item.label}
                                     </Link>
                                 ))}
+
+                                <div className="border-t border-white/10 my-2" />
+                                {session ? (
+                                    <button
+                                        onClick={() => {
+                                            supabase.auth.signOut();
+                                            setIsMenuOpen(false);
+                                        }}
+                                        className="block w-full py-2 px-4 text-sm font-medium text-red-400 hover:bg-white/5 rounded-lg transition-colors"
+                                    >
+                                        Sign Out
+                                    </button>
+                                ) : (
+                                    <Link
+                                        to="/auth"
+                                        className="block w-full py-2 px-4 text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        Login
+                                    </Link>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -346,7 +388,7 @@ export default function HomePage() {
                             </div>
 
                             {/* SUB TEXT - Below Card */}
-                            <p className="text-white/40 text-sm font-medium tracking-widest uppercase mb-8">
+                            <p className="text-white text-[10px] md:text-sm font-medium tracking-wide md:tracking-widest uppercase mb-8">
                                 Guest limit: 1GB. Sign up to send 5GB free.
                             </p>
 
