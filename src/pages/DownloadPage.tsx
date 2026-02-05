@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Download,
     Lock,
     AlertCircle,
     File,
@@ -35,7 +34,17 @@ export default function DownloadPage() {
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [encryptionKey, setEncryptionKey] = useState<string | null>(null);
     const [downloadMode, setDownloadMode] = useState<'desktop' | 'mobile'>('desktop');
+    const [loadingMessage, setLoadingMessage] = useState('Initializing secure value...');
     const downloadManager = useRef<FileDownloader | null>(null);
+
+    const LOADING_MESSAGES = [
+        "Handshaking with server...",
+        "Validating decryption keys...",
+        "Downloading encrypted chunks...",
+        "Decrypting file in memory...",
+        "Checking integrity...",
+        "Preparing download...",
+    ];
 
     // Auto-detect Mobile (iOS/Android)
     useEffect(() => {
@@ -124,9 +133,39 @@ export default function DownloadPage() {
             form.submit();
             document.body.removeChild(form);
 
-            // Show a "started" state briefly
+            // Show a "started" state briefly and rotate messages
             setStatus('decrypting');
-            setTimeout(() => setStatus('complete'), 5000); // Fake completion since we can't track POST download progress
+
+            // ESTIMATION ALGORITHM:
+            // Since we cannot track the actual Progress of a native Form POST download in JS,
+            // we estimate the duration based on File Size and Network Speed.
+            // This ensures the spinner stays up for a realistic amount of time.
+
+            const size = fileInfo.fileSize;
+
+            // Attempt to get actual network speed, default to conservative 3G/4G (2MB/s)
+            // @ts-ignore - Navigator connection is experimental but supported in Chromium/Android
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            const speedMbps = connection?.downlink || 5; // Default to 5 Mbps if unknown
+            const speedBytesPerSec = (speedMbps * 1024 * 1024) / 8;
+
+            // Calculate duration: Size / Speed
+            // We add a 20% buffer to be safe, and clamp between 5s and 5 minutes
+            const estimatedSeconds = (size / speedBytesPerSec) * 1.2;
+            const finalDurationMs = Math.max(5000, Math.min(300000, estimatedSeconds * 1000));
+
+            console.log(`[MobileStream] Est. Duration: ${finalDurationMs}ms (Size: ${size}b, Speed: ${speedMbps}Mbps)`);
+
+            let msgIndex = 0;
+            const interval = setInterval(() => {
+                setLoadingMessage(LOADING_MESSAGES[msgIndex % LOADING_MESSAGES.length]);
+                msgIndex++;
+            }, 2000); // Slower rotation (2s) so users can read messages during long downloads
+
+            setTimeout(() => {
+                setStatus('complete');
+                clearInterval(interval);
+            }, finalDurationMs);
             return;
         }
 
@@ -333,98 +372,112 @@ export default function DownloadPage() {
                             </motion.div>
                         )}
 
-                        {/* Decrypting state */}
-                        {status === 'decrypting' && (
+                        {/* Decrypting state - AND Complete state base */}
+                        {(status === 'decrypting' || status === 'complete') && (
                             <motion.div
                                 key="decrypting"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="py-8"
+                                className="py-8 relative"
                             >
-                                <div className="w-16 h-16 rounded-full bg-deep-purple/20 flex items-center justify-center mx-auto mb-4">
-                                    <Lock className="w-8 h-8 text-deep-purple animate-pulse" />
-                                </div>
-                                <h2 className="text-xl font-bold text-silver mb-2">
-                                    Downloading & Decrypting...
-                                </h2>
-                                <p className="text-silver/60 text-sm mb-6">
-                                    Your file is being streamed and decrypted on the fly.
-                                </p>
+                                {downloadMode === 'mobile' ? (
+                                    /* --- MOBILE UI: Spinner + Rotating Text --- */
+                                    <>
+                                        <div className="w-16 h-16 rounded-full bg-deep-purple/20 flex items-center justify-center mx-auto mb-6">
+                                            <Loader2 className="w-8 h-8 text-deep-purple animate-spin" />
+                                        </div>
+                                        <h2 className="text-xl font-bold text-silver mb-2 animate-pulse">
+                                            Processing...
+                                        </h2>
+                                        <p className="text-silver/60 text-sm mb-8 h-6">
+                                            {loadingMessage}
+                                        </p>
+                                    </>
+                                ) : (
+                                    /* --- DESKTOP UI: True Progress Bars --- */
+                                    <>
+                                        <div className="w-16 h-16 rounded-full bg-deep-purple/20 flex items-center justify-center mx-auto mb-4">
+                                            <Lock className="w-8 h-8 text-deep-purple animate-pulse" />
+                                        </div>
+                                        <h2 className="text-xl font-bold text-silver mb-2">
+                                            {status === 'complete' ? 'Decryption Finished' : 'Downloading & Decrypting...'}
+                                        </h2>
+                                        <p className="text-silver/60 text-sm mb-6">
+                                            {status === 'complete'
+                                                ? 'Your file is ready.'
+                                                : 'Your file is being streamed and decrypted on the fly.'}
+                                        </p>
 
-                                {/* Download Progress bar */}
-                                <div className="mb-4 text-left">
-                                    <div className="flex justify-between text-xs text-silver/60 mb-1">
-                                        <span>Download</span>
-                                        <span>{downloadProgress}%</span>
-                                    </div>
-                                    <div className="w-full h-2 bg-stealth-700 rounded-full overflow-hidden">
+                                        {/* Download Progress bar */}
+                                        <div className="mb-4 text-left">
+                                            <div className="flex justify-between text-xs text-silver/60 mb-1">
+                                                <span>Download</span>
+                                                <span>{downloadProgress}%</span>
+                                            </div>
+                                            <div className="w-full h-2 bg-stealth-700 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    className="h-full bg-blue-500"
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${downloadProgress}%` }}
+                                                    transition={{ duration: 0.1 }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Decryption Progress bar */}
+                                        <div className="text-left mb-6">
+                                            <div className="flex justify-between text-xs text-silver/60 mb-1">
+                                                <span>Decryption</span>
+                                                <span>{progress}%</span>
+                                            </div>
+                                            <div className="w-full h-2 bg-stealth-700 rounded-full overflow-hidden">
+                                                <motion.div
+                                                    className="h-full bg-gradient-to-r from-deep-purple to-success"
+                                                    initial={{ width: 0 }}
+                                                    animate={{ width: `${progress}%` }}
+                                                    transition={{ duration: 0.3 }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Complete Overlay Card */}
+                                <AnimatePresence>
+                                    {status === 'complete' && (
                                         <motion.div
-                                            className="h-full bg-blue-500"
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${downloadProgress}%` }}
-                                            transition={{ duration: 0.1 }} // Fast updates for network
-                                        />
-                                    </div>
-                                </div>
+                                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            className="absolute inset-x-0 bottom-0 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-2xl flex flex-col gap-3"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+                                                    <Check className="w-5 h-5 text-success" />
+                                                </div>
+                                                <div className="text-left flex-1">
+                                                    <h3 className="font-bold text-white text-sm">Download Complete!</h3>
+                                                    <p className="text-xs text-silver/60">File decrypted & saved.</p>
+                                                </div>
+                                            </div>
 
-                                {/* Decryption Progress bar */}
-                                <div className="text-left">
-                                    <div className="flex justify-between text-xs text-silver/60 mb-1">
-                                        <span>Decryption</span>
-                                        <span>{progress}%</span>
-                                    </div>
-                                    <div className="w-full h-2 bg-stealth-700 rounded-full overflow-hidden">
-                                        <motion.div
-                                            className="h-full bg-gradient-to-r from-deep-purple to-success"
-                                            initial={{ width: 0 }}
-                                            animate={{ width: `${progress}%` }}
-                                            transition={{ duration: 0.3 }}
-                                        />
-                                    </div>
-                                </div>
-                            </motion.div>
-                        )}
-
-                        {/* Complete state */}
-                        {status === 'complete' && (
-                            <motion.div
-                                key="complete"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="py-8"
-                            >
-                                <motion.div
-                                    className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mx-auto mb-4"
-                                    initial={{ scale: 0 }}
-                                    animate={{ scale: 1 }}
-                                    transition={{ type: 'spring', delay: 0.1 }}
-                                >
-                                    <Check className="w-8 h-8 text-success" />
-                                </motion.div>
-                                <h2 className="text-xl font-bold text-silver mb-2">
-                                    Download Complete!
-                                </h2>
-                                <p className="text-silver/60 text-sm mb-6">
-                                    Your file has been decrypted and saved.
-                                </p>
-
-                                <div className="flex gap-3">
-                                    <button
-                                        onClick={handleDownload}
-                                        className="flex-1 py-3 rounded-xl bg-stealth-700 hover:bg-stealth-600 text-silver font-medium flex items-center justify-center gap-2 transition-colors"
-                                    >
-                                        <Download className="w-4 h-4" />
-                                        Download Again
-                                    </button>
-                                    <Link
-                                        to="/"
-                                        className="flex-1 py-3 rounded-xl bg-deep-purple hover:bg-deep-purple/80 text-white font-medium flex items-center justify-center gap-2 transition-colors"
-                                    >
-                                        Upload New
-                                    </Link>
-                                </div>
+                                            <div className="flex gap-2 w-full mt-1">
+                                                <button
+                                                    onClick={handleDownload}
+                                                    className="flex-1 py-2 rounded-lg bg-stealth-700 hover:bg-stealth-600 text-silver text-xs font-medium transition-colors"
+                                                >
+                                                    Download Again
+                                                </button>
+                                                <Link
+                                                    to="/"
+                                                    className="flex-1 py-2 rounded-lg bg-deep-purple hover:bg-deep-purple/80 text-white text-xs font-medium flex items-center justify-center transition-colors"
+                                                >
+                                                    Upload New
+                                                </Link>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </motion.div>
                         )}
 
