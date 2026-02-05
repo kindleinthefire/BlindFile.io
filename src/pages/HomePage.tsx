@@ -150,7 +150,7 @@ export default function HomePage() {
                                         initial={{ opacity: 0, y: -10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                        className="absolute top-full right-1/2 translate-x-1/2 mt-3 w-48 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-2xl z-50 overflow-hidden"
+                                        className="absolute top-full right-1/2 translate-x-1/2 mt-3 w-48 bg-[rgba(20,20,20,0.8)] backdrop-blur-[10px] border border-white/10 rounded-xl p-2 shadow-2xl z-50 overflow-hidden"
                                     >
                                         {MENU_ITEMS.map((item) => (
                                             <Link
@@ -388,8 +388,14 @@ export default function HomePage() {
                             </div>
 
                             {/* SUB TEXT - Below Card */}
-                            <p className="text-white text-[10px] md:text-sm font-medium tracking-wide md:tracking-widest uppercase mb-8">
-                                Guest limit: 1GB. Sign up to send 5GB free.
+                            <p className="flex items-center justify-center gap-1.5 mb-4 text-xs md:text-sm font-medium text-white">
+                                <span>✨ Guest limit: 1GB.</span>
+                                <Link
+                                    to="/auth"
+                                    className="text-purple-500 font-bold hover:text-purple-400 transition-colors"
+                                >
+                                    Unlock 5GB Free →
+                                </Link>
                             </p>
 
                             {/* Feature badges */}
