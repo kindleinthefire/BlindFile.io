@@ -1,11 +1,12 @@
 import { useCallback, Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, ArrowRight, Menu, X, Shield, Zap, Clock, Eye } from 'lucide-react';
+import { UploadCloud, ArrowRight, Menu, X, Shield, Zap, Clock, Eye, User } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
 import { ThreeBackground } from '../components/ThreeBackground';
 import { supabase } from '../lib/supabase';
+import { ProfileModal } from '../components/ProfileModal';
 
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -15,6 +16,7 @@ export default function HomePage() {
     const { upload, pause, resume, cancel } = useFileUploader();
     const { getAllFiles } = useUploadStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [session, setSession] = useState<any>(null);
     const navigate = useNavigate();
 
@@ -98,12 +100,21 @@ export default function HomePage() {
                     {/* Desktop Nav */}
                     <nav className="flex items-center gap-8">
                         {session ? (
-                            <Link
-                                to="/app"
-                                className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
-                            >
-                                Go to App
-                            </Link>
+                            <div className="flex items-center gap-6">
+                                <Link
+                                    to="/app"
+                                    className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
+                                >
+                                    App
+                                </Link>
+                                <button
+                                    onClick={() => setIsProfileOpen(true)}
+                                    className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500 flex items-center gap-2"
+                                >
+                                    <User className="w-4 h-4" />
+                                    Profile
+                                </button>
+                            </div>
                         ) : (
                             <Link
                                 to="/auth"
@@ -146,13 +157,24 @@ export default function HomePage() {
                                 className="absolute top-full mt-4 w-48 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-xl z-50 overflow-hidden text-center"
                             >
                                 {session ? (
-                                    <Link
-                                        to="/app"
-                                        className="block w-full py-3 px-4 text-sm font-medium text-white hover:bg-white/5 rounded-lg transition-colors"
-                                        onClick={() => setIsMenuOpen(false)}
-                                    >
-                                        Go to App
-                                    </Link>
+                                    <>
+                                        <Link
+                                            to="/app"
+                                            className="block w-full py-3 px-4 text-sm font-medium text-white hover:bg-white/5 rounded-lg transition-colors"
+                                            onClick={() => setIsMenuOpen(false)}
+                                        >
+                                            Go to App
+                                        </Link>
+                                        <button
+                                            onClick={() => {
+                                                setIsProfileOpen(true);
+                                                setIsMenuOpen(false);
+                                            }}
+                                            className="block w-full py-3 px-4 text-sm font-medium text-white hover:bg-white/5 rounded-lg transition-colors"
+                                        >
+                                            Profile
+                                        </button>
+                                    </>
                                 ) : (
                                     <Link
                                         to="/auth"
@@ -169,6 +191,12 @@ export default function HomePage() {
 
 
             </motion.header>
+
+            <ProfileModal
+                isOpen={isProfileOpen}
+                onClose={() => setIsProfileOpen(false)}
+                session={session}
+            />
 
             {/* --- MAIN CONTENT --- */}
             <main className="relative z-10 flex-1 flex flex-col items-center justify-start md:justify-center px-4 pt-4 md:pt-0 w-full max-w-[1920px] mx-auto">

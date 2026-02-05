@@ -1,17 +1,35 @@
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Zap, Clock, Eye } from 'lucide-react';
+import { Shield, Zap, Clock, Eye, User } from 'lucide-react';
 import { DropZone } from '../components/DropZone';
 import { UploadCard } from '../components/UploadCard';
 import { UploadStats } from '../components/UploadStats';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
+import { supabase } from '../lib/supabase';
+import { ProfileModal } from '../components/ProfileModal';
 
 import logo from '../assets/logo.png';
 
 export default function LegacyAppPage() {
     const { upload, pause, resume, cancel } = useFileUploader();
     const { getAllFiles, stats } = useUploadStore();
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [session, setSession] = useState<any>(null);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
 
     const files = getAllFiles();
     const handleFilesSelected = useCallback(
@@ -47,10 +65,28 @@ export default function LegacyAppPage() {
                             </div>
                         </div>
 
-
+                        <div className="flex items-center gap-4">
+                            {session ? (
+                                <button
+                                    onClick={() => setIsProfileOpen(true)}
+                                    className="p-2 rounded-lg hover:bg-white/5 transition-colors flex items-center gap-2 text-silver/60 hover:text-silver"
+                                >
+                                    <User className="w-5 h-5" />
+                                    <span className="text-sm font-medium hidden md:inline">Profile</span>
+                                </button>
+                            ) : (
+                                <div />
+                            )}
+                        </div>
                     </div>
                 </div>
             </motion.header>
+
+            <ProfileModal
+                isOpen={isProfileOpen}
+                onClose={() => setIsProfileOpen(false)}
+                session={session}
+            />
 
             {/* Hero Section */}
             <motion.section

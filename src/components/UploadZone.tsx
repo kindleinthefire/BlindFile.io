@@ -2,6 +2,8 @@
 import { api } from '../lib/api';
 import { generateEncryptionKey, exportKey, encryptChunk } from '../lib/crypto';
 import { UploadFile } from '../store/uploadStore';
+import { supabase } from '../lib/supabase';
+import { incrementUserStats } from '../lib/userStats';
 
 // 1. CONCURRENCY LIMIT
 const MAX_CONCURRENT_UPLOADS = 3;
@@ -159,6 +161,17 @@ export async function uploadFile(
         // Step 5: Complete upload
         const completeResponse = await api.completeUpload(initResponse.id, completedParts);
         const downloadUrl = `${window.location.origin}/download/${initResponse.id}#${keyString}`;
+
+        // 6. TRACK STATS (Fire and forget, or await if critical)
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                // We use file.size (original unencrypted size) for usage tracking usually
+                await incrementUserStats(user.id, file.size);
+            }
+        } catch (err) {
+            console.error('Failed to update stats:', err);
+        }
 
         updateFile(fileId, {
             status: 'completed',
