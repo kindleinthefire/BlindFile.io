@@ -118,9 +118,9 @@ export default function HomePage() {
                         ) : (
                             <Link
                                 to="/auth"
-                                className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
+                                className="text-lg font-bold text-white transition-colors hover:text-purple-400"
                             >
-                                Sign Up
+                                Sign Up/Login
                             </Link>
                         )}
                     </nav>
