@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Zap, Clock, Eye, Github } from 'lucide-react';
+import { Shield, Zap, Clock, Eye } from 'lucide-react';
 import { DropZone } from '../components/DropZone';
 import { UploadCard } from '../components/UploadCard';
 import { UploadStats } from '../components/UploadStats';
@@ -47,14 +47,7 @@ export default function LegacyAppPage() {
                             </div>
                         </div>
 
-                        <a
-                            href="https://github.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 rounded-lg hover:bg-white/5 transition-colors"
-                        >
-                            <Github className="w-5 h-5 text-silver/60" />
-                        </a>
+
                     </div>
                 </div>
             </motion.header>
@@ -85,7 +78,7 @@ export default function LegacyAppPage() {
                         transition={{ delay: 0.3 }}
                     >
                         End-to-end encrypted file sharing up to 500GB. Your files
-                        self-destruct in 12 hours. We never see your data.
+                        self-destruct in 24 hours. We never see your data.
                     </motion.p>
 
                     {/* Feature badges */}
@@ -107,7 +100,7 @@ export default function LegacyAppPage() {
                         </div>
                         <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
                             <Clock className="w-4 h-4 text-yellow-500" />
-                            <span className="text-sm text-silver">12-Hour Auto-Delete</span>
+                            <span className="text-sm text-silver">24-Hour Auto-Delete</span>
                         </div>
                         <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
                             <Eye className="w-4 h-4 text-red-500" strokeWidth={1.5} />
@@ -162,17 +155,7 @@ export default function LegacyAppPage() {
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="border-t border-white/5 py-6">
-                <div className="container mx-auto px-4 text-center">
-                    <p className="text-xs text-silver/40">
-                        Built with{' '}
-                        <span className="text-deep-purple">Cloudflare Workers</span> +{' '}
-                        <span className="text-success">R2</span>. Zero egress fees. Maximum
-                        privacy.
-                    </p>
-                </div>
-            </footer>
+
 
             {/* Background decoration */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
