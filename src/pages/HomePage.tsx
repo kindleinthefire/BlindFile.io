@@ -90,7 +90,7 @@ export default function HomePage() {
                         <img
                             src={logo}
                             alt="Blind File Logo"
-                            className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300"
+                            className="w-32 h-32 object-contain group-hover:scale-105 transition-transform duration-300"
                         />
                         <span className="font-bold text-xl tracking-wide text-white/90 group-hover:text-white transition-colors">
                             BLIND FILE
