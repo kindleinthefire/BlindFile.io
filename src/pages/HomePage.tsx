@@ -321,7 +321,7 @@ export default function HomePage() {
                                     />
 
                                     <h2 className="text-3xl font-bold text-white mb-2 tracking-tight group-hover:text-purple-100 transition-colors">
-                                        {session ? 'Go to Dashboard' : 'Upload Blind File'}
+                                        {session ? 'Go to Dashboard' : 'Drop to Encrypt'}
                                     </h2>
 
                                     <p className="text-white/50 text-base font-medium">
