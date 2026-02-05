@@ -1,6 +1,6 @@
 import { useCallback, Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, ArrowRight, Menu, X } from 'lucide-react';
+import { UploadCloud, ArrowRight, Menu, X, Shield, Zap, Clock, Eye } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
@@ -187,7 +187,7 @@ export default function HomePage() {
                             {/* HERO TEXT - Above Card */}
                             <div className="text-center space-y-1 mb-1">
                                 <h1 className="text-2xl md:text-5xl font-bold text-white tracking-tight drop-shadow-xl">
-                                    Free 1GB Sends. <span className="text-purple-400">Forever.</span>
+                                    Free 500GB Sends. <span className="text-purple-400">Forever.</span>
                                 </h1>
                             </div>
 
@@ -258,9 +258,38 @@ export default function HomePage() {
                             </div>
 
                             {/* SUB TEXT - Below Card */}
-                            <p className="text-white/40 text-sm font-medium tracking-widest uppercase">
+                            <p className="text-white/40 text-sm font-medium tracking-widest uppercase mb-8">
                                 No Sign Up Required
                             </p>
+
+                            {/* Feature badges */}
+                            <motion.div
+                                className="flex flex-wrap items-center justify-center gap-4 px-4"
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                transition={{ delay: 0.4 }}
+                            >
+                                <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
+                                    <Shield className="w-4 h-4 text-success" />
+                                    <span className="text-sm text-silver">
+                                        Zero-Knowledge Encryption
+                                    </span>
+                                </div>
+                                <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
+                                    <Zap className="w-4 h-4 text-deep-purple" />
+                                    <span className="text-sm text-silver">500GB Max Size</span>
+                                </div>
+                                <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
+                                    <Clock className="w-4 h-4 text-yellow-500" />
+                                    <span className="text-sm text-silver">12-Hour Auto-Delete</span>
+                                </div>
+                                <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
+                                    <Eye className="w-4 h-4 text-red-500" strokeWidth={1.5} />
+                                    <span className="text-sm text-silver line-through opacity-50">
+                                        We See Your Data
+                                    </span>
+                                </div>
+                            </motion.div>
 
                         </motion.div>
                     ) : (
