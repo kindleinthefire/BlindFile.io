@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import DownloadPage from './pages/DownloadPage';
 import AuthPage from './pages/AuthPage';
 import PricingPage from './pages/PricingPage';
+import FAQPage from './pages/FAQPage';
 
 function App() {
     return (
@@ -15,6 +16,7 @@ function App() {
                     <Route path="/app" element={<LegacyAppPage />} />
                     <Route path="/auth" element={<AuthPage />} />
                     <Route path="/pricing" element={<PricingPage />} />
+                    <Route path="/faq" element={<FAQPage />} />
                     <Route path="/download/:id" element={<DownloadPage />} />
                 </Routes>
             </AnimatePresence>
