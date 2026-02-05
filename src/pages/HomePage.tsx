@@ -136,11 +136,11 @@ export default function HomePage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
                             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex flex-col items-center gap-4 md:gap-8 w-full max-w-lg -mt-4 md:mt-0"
+                            className="flex flex-col items-center gap-2 md:gap-8 w-full max-w-lg -mt-12 md:mt-0"
                         >
                             {/* HERO TEXT - Above Card */}
-                            <div className="text-center space-y-2 mb-2">
-                                <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight drop-shadow-xl">
+                            <div className="text-center space-y-1 mb-1">
+                                <h1 className="text-2xl md:text-5xl font-bold text-white tracking-tight drop-shadow-xl">
                                     Free 1GB Sends. <span className="text-purple-400">Forever.</span>
                                 </h1>
                             </div>

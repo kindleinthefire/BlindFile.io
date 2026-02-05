@@ -388,7 +388,7 @@ export default function DownloadPage() {
                                             <Loader2 className="w-8 h-8 text-deep-purple animate-spin" />
                                         </div>
                                         <h2 className="text-xl font-bold text-silver mb-2 animate-pulse">
-                                            Processing...
+                                            Preparing file for download...
                                         </h2>
                                         <p className="text-silver/60 text-sm mb-8 h-6">
                                             {loadingMessage}
@@ -451,17 +451,37 @@ export default function DownloadPage() {
                                             animate={{ opacity: 1, y: 0, scale: 1 }}
                                             className="absolute inset-x-0 bottom-0 bg-zinc-900/90 backdrop-blur-md border border-white/10 rounded-xl p-4 shadow-2xl flex flex-col gap-3"
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center shrink-0">
-                                                    <Check className="w-5 h-5 text-success" />
+                                            {downloadMode === 'mobile' ? (
+                                                /* MOBILE COMPLETE STATE */
+                                                <>
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center shrink-0 mt-1">
+                                                            <AlertCircle className="w-5 h-5 text-blue-400" />
+                                                        </div>
+                                                        <div className="text-left flex-1">
+                                                            <h3 className="font-bold text-white text-sm mb-1">Download Started!</h3>
+                                                            <p className="text-xs text-silver/70 leading-relaxed">
+                                                                Check your browser's address bar or notification center to see the progress of your {formatBytes(fileInfo?.fileSize || 0)} file.
+                                                                <br /><br />
+                                                                <span className="text-blue-300 font-medium">Please keep this tab open until the system confirms the download is finished.</span>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                /* DESKTOP COMPLETE STATE */
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center shrink-0">
+                                                        <Check className="w-5 h-5 text-success" />
+                                                    </div>
+                                                    <div className="text-left flex-1">
+                                                        <h3 className="font-bold text-white text-sm">Download Complete!</h3>
+                                                        <p className="text-xs text-silver/60">File decrypted & saved.</p>
+                                                    </div>
                                                 </div>
-                                                <div className="text-left flex-1">
-                                                    <h3 className="font-bold text-white text-sm">Download Complete!</h3>
-                                                    <p className="text-xs text-silver/60">File decrypted & saved.</p>
-                                                </div>
-                                            </div>
+                                            )}
 
-                                            <div className="flex gap-2 w-full mt-1">
+                                            <div className="flex gap-2 w-full mt-2">
                                                 <button
                                                     onClick={handleDownload}
                                                     className="flex-1 py-2 rounded-lg bg-stealth-700 hover:bg-stealth-600 text-silver text-xs font-medium transition-colors"
