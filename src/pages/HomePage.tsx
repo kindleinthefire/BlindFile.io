@@ -1,6 +1,6 @@
 import { useCallback, Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, ArrowRight, Menu, X, Shield, Zap, Clock, User } from 'lucide-react';
+import { UploadCloud, ArrowRight, Menu, X, Shield, Zap, Clock, User, CheckCircle } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
@@ -411,10 +411,10 @@ export default function HomePage() {
                                 </div>
                                 <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
                                     <Clock className="w-4 h-4 text-yellow-500" />
-                                    <span className="text-sm text-silver">12-Hour Auto-Delete</span>
+                                    <span className="text-sm text-silver">24-Hour Auto-Delete</span>
                                 </div>
                                 <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
-                                    <Shield className="w-4 h-4 text-emerald-400" />
+                                    <CheckCircle className="w-4 h-4 text-emerald-400" />
                                     <span className="text-sm text-white">
                                         No Logs Kept
                                     </span>
