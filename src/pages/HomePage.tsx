@@ -1,12 +1,13 @@
-import { useCallback, Suspense, useState } from 'react';
+import { useCallback, Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { UploadCloud, ArrowRight, Menu, X } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
 import { ThreeBackground } from '../components/ThreeBackground';
+import { supabase } from '../lib/supabase';
 
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 import logo from '../assets/logo.png';
 
@@ -14,26 +15,52 @@ export default function HomePage() {
     const { upload, pause, resume, cancel } = useFileUploader();
     const { getAllFiles } = useUploadStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [session, setSession] = useState<any>(null);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
 
     const files = getAllFiles();
     const hasFiles = files.length > 0;
 
     const handleFilesSelected = useCallback(
         async (selectedFiles: File[]) => {
+            if (session) {
+                navigate('/app');
+                return;
+            }
             for (const file of selectedFiles) {
                 upload(file);
             }
         },
-        [upload]
+        [upload, session, navigate]
     );
 
     // Simple Drag & Drop Logic for the Card
     const onDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+
+        if (session) {
+            navigate('/app');
+            return;
+        }
+
         const droppedFiles = Array.from(e.dataTransfer.files);
         if (droppedFiles.length > 0) handleFilesSelected(droppedFiles);
-    }, [handleFilesSelected]);
+    }, [handleFilesSelected, session, navigate]);
 
     const onDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -70,12 +97,21 @@ export default function HomePage() {
 
                     {/* Desktop Nav */}
                     <nav className="flex items-center gap-8">
-                        <Link
-                            to="/auth"
-                            className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
-                        >
-                            Sign Up
-                        </Link>
+                        {session ? (
+                            <Link
+                                to="/app"
+                                className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
+                            >
+                                Go to App
+                            </Link>
+                        ) : (
+                            <Link
+                                to="/auth"
+                                className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
+                            >
+                                Sign Up
+                            </Link>
+                        )}
                     </nav>
                 </div>
 
@@ -109,13 +145,23 @@ export default function HomePage() {
                                 exit={{ opacity: 0, y: -10 }}
                                 className="absolute top-full mt-4 w-48 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-xl z-50 overflow-hidden text-center"
                             >
-                                <Link
-                                    to="/auth"
-                                    className="block w-full py-3 px-4 text-sm font-medium text-white hover:bg-white/5 rounded-lg transition-colors"
-                                    onClick={() => setIsMenuOpen(false)}
-                                >
-                                    Sign Up / Login
-                                </Link>
+                                {session ? (
+                                    <Link
+                                        to="/app"
+                                        className="block w-full py-3 px-4 text-sm font-medium text-white hover:bg-white/5 rounded-lg transition-colors"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        Go to App
+                                    </Link>
+                                ) : (
+                                    <Link
+                                        to="/auth"
+                                        className="block w-full py-3 px-4 text-sm font-medium text-white hover:bg-white/5 rounded-lg transition-colors"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        Sign Up / Login
+                                    </Link>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -160,7 +206,14 @@ export default function HomePage() {
                                     transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_80px_-10px_rgba(124,58,237,0.6)] hover:border-purple-400/40
                                     cursor-pointer
                                 "
-                                onClick={() => document.getElementById('file-upload-hidden')?.click()}
+                                onClick={() => {
+                                    console.log('Card clicked, session:', session);
+                                    if (session) {
+                                        navigate('/app');
+                                    } else {
+                                        document.getElementById('file-upload-hidden')?.click();
+                                    }
+                                }}
                             >
                                 {/* Internal Specular Highlight (The 45deg shine) */}
                                 <div
@@ -181,11 +234,13 @@ export default function HomePage() {
                                     />
 
                                     <h2 className="text-3xl font-bold text-white mb-2 tracking-tight group-hover:text-purple-100 transition-colors">
-                                        Upload Blind File
+                                        {session ? 'Go to Dashboard' : 'Upload Blind File'}
                                     </h2>
 
                                     <p className="text-white/50 text-base font-medium">
-                                        Drag & Drop files here or <span className="text-purple-400 underline underline-offset-4 decoration-purple-400/30 hover:decoration-purple-400 hover:text-purple-300 transition-all">Browse</span>
+                                        {session ? 'Click to manage your files in the App' : (
+                                            <>Drag & Drop files here or <span className="text-purple-400 underline underline-offset-4 decoration-purple-400/30 hover:decoration-purple-400 hover:text-purple-300 transition-all">Browse</span></>
+                                        )}
                                     </p>
                                 </div>
 
