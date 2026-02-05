@@ -127,9 +127,9 @@ export default function HomePage() {
                             ) : (
                                 <Link
                                     to="/auth"
-                                    className="text-lg font-bold text-white transition-colors hover:text-purple-400"
+                                    className="px-6 py-2 rounded-full bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold transition-all shadow-[0_0_20px_rgba(147,51,234,0.5)] hover:shadow-[0_0_30px_rgba(147,51,234,0.7)]"
                                 >
-                                    Sign Up/Login
+                                    Get 5GB Free
                                 </Link>
                             )}
                         </div>
@@ -220,10 +220,10 @@ export default function HomePage() {
                                 ) : (
                                     <Link
                                         to="/auth"
-                                        className="block w-full py-3 px-4 text-sm font-medium text-white hover:bg-white/5 rounded-lg transition-colors"
+                                        className="mx-4 my-2 block py-3 px-4 text-center rounded-full bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold transition-all shadow-[0_0_15px_rgba(147,51,234,0.4)]"
                                         onClick={() => setIsMenuOpen(false)}
                                     >
-                                        Sign Up / Login
+                                        Get 5GB Free
                                     </Link>
                                 )}
 
