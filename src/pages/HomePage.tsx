@@ -99,7 +99,7 @@ export default function HomePage() {
                             alt="Blind File Logo"
                             className="w-32 h-32 object-contain group-hover:scale-105 transition-transform duration-300"
                         />
-                        <span className="font-bold text-xl tracking-wide text-white/90 group-hover:text-white transition-colors">
+                        <span className="font-bold text-xl tracking-[0.25em] text-white/90 group-hover:text-white transition-colors">
                             BLIND FILE
                         </span>
                     </Link>
@@ -197,7 +197,7 @@ export default function HomePage() {
                             alt="Blind File Logo"
                             className="w-16 h-16 object-contain group-hover:scale-105 transition-transform duration-300"
                         />
-                        <span className="font-bold text-xl tracking-wide text-white/90 group-hover:text-white transition-colors -mt-1">
+                        <span className="font-bold text-xl tracking-[0.25em] text-white/90 group-hover:text-white transition-colors -mt-1">
                             BLIND FILE
                         </span>
                     </Link>
