@@ -80,14 +80,14 @@ export default function HomePage() {
                 </div>
 
                 {/* MOBILE HEADER LAYOUT (Centered Logo + Menu) */}
-                <div className="md:hidden w-full flex flex-col items-center relative">
-                    <Link to="/" className="flex flex-col items-center gap-0 group cursor-pointer mb-4">
+                <div className="md:hidden w-full flex flex-col items-center relative gap-2">
+                    <Link to="/" className="flex flex-col items-center gap-0 group cursor-pointer">
                         <img
                             src={logo}
                             alt="Blind File Logo"
-                            className="w-20 h-20 object-contain group-hover:scale-105 transition-transform duration-300"
+                            className="w-16 h-16 object-contain group-hover:scale-105 transition-transform duration-300"
                         />
-                        <span className="font-bold text-2xl tracking-wide text-white/90 group-hover:text-white transition-colors -mt-1">
+                        <span className="font-bold text-xl tracking-wide text-white/90 group-hover:text-white transition-colors -mt-1">
                             BLIND FILE
                         </span>
                     </Link>
@@ -97,7 +97,7 @@ export default function HomePage() {
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className="p-2 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white transition-colors"
                     >
-                        {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
 
                     {/* Mobile Dropdown Menu */}
@@ -125,7 +125,7 @@ export default function HomePage() {
             </motion.header>
 
             {/* --- MAIN CONTENT --- */}
-            <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 py-2 md:py-0 w-full max-w-[1920px] mx-auto">
+            <main className="relative z-10 flex-1 flex flex-col items-center justify-start md:justify-center px-4 pt-4 md:pt-0 w-full max-w-[1920px] mx-auto">
 
                 <AnimatePresence mode="wait">
                     {!hasFiles ? (
@@ -136,7 +136,7 @@ export default function HomePage() {
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
                             transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                            className="flex flex-col items-center gap-2 md:gap-8 w-full max-w-lg -mt-12 md:mt-0"
+                            className="flex flex-col items-center gap-2 md:gap-8 w-full max-w-lg -mt-4 md:mt-0"
                         >
                             {/* HERO TEXT - Above Card */}
                             <div className="text-center space-y-1 mb-1">
