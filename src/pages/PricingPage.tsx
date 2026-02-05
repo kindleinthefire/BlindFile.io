@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { ThreeBackground } from '../components/ThreeBackground';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Zap, Clock, Rocket, Globe, Database, Infinity, Briefcase, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, Zap, Clock, Rocket, Globe, Database, Infinity } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 const PRICING_TIERS = [
@@ -52,7 +52,7 @@ const PRICING_TIERS = [
         features: [
             { icon: Zap, text: '500GB File Limit (Massive Scale)' },
             { icon: Database, text: '5TB Monthly Cap' },
-            { icon: Zap, text: 'Gigabit Priority Network' },
+            { icon: Zap, text: 'Global Edge Acceleration' },
             { icon: Clock, text: 'Custom Expiry Settings' },
         ],
         buttonText: 'Go Pro',
@@ -69,10 +69,9 @@ const PRICING_TIERS = [
         hook: 'Infinite Density.',
         description: 'For heavy-duty transport. The massive 500GB capacity of Pro, with absolutely no monthly fuel limits.',
         features: [
+            { icon: Zap, text: 'Everything in Pro +' },
             { icon: Globe, text: '500GB File Limit' },
             { icon: Infinity, text: 'Unlimited Monthly Sends*' },
-            { icon: Briefcase, text: 'Team Mode (3 Seats Included)' },
-            { icon: Lock, text: 'Permanent Storage Options' },
         ],
         buttonText: 'Contact Sales',
         buttonLink: '/contact',
