@@ -185,10 +185,14 @@ export default function HomePage() {
                             className="flex flex-col items-center gap-2 md:gap-8 w-full max-w-lg -mt-4 md:mt-0"
                         >
                             {/* HERO TEXT - Above Card */}
-                            <div className="text-center space-y-1 mb-1">
-                                <h1 className="text-2xl md:text-5xl font-bold text-white tracking-tight drop-shadow-xl">
-                                    Free 500GB Sends. <span className="text-purple-400">Forever.</span>
+                            {/* HERO TEXT - Above Card */}
+                            <div className="text-center space-y-4 mb-4">
+                                <h1 className="text-4xl md:text-6xl font-bold tracking-tight drop-shadow-xl">
+                                    Total Privacy. <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600">Massive Scale.</span>
                                 </h1>
+                                <p className="text-lg md:text-xl text-white/60 font-medium max-w-xl mx-auto">
+                                    Zero-knowledge, ephemeral file sharing up to 500GB.
+                                </p>
                             </div>
 
                             {/* THE GLASS PANEL */}
@@ -258,9 +262,14 @@ export default function HomePage() {
                             </div>
 
                             {/* SUB TEXT - Below Card */}
-                            <p className="text-white/40 text-sm font-medium tracking-widest uppercase mb-8">
-                                No Sign Up Required
-                            </p>
+                            <div className="mb-8 ">
+                                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-md shadow-lg">
+                                    <span className="text-lg">✨</span>
+                                    <span className="text-sm font-semibold text-white tracking-wide">
+                                        Unlimited 1GB sends free. <span className="text-purple-300">No sign-up.</span>
+                                    </span>
+                                </span>
+                            </div>
 
                             {/* Feature badges */}
                             <motion.div
