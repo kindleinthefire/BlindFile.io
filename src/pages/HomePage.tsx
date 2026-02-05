@@ -369,7 +369,7 @@ export default function HomePage() {
 
                                     <p className="text-white/50 text-base font-medium">
                                         {session ? 'Click to manage your files in the App' : (
-                                            <>Drag & Drop files here or <span className="text-purple-400 underline underline-offset-4 decoration-purple-400/30 hover:decoration-purple-400 hover:text-purple-300 transition-all">Browse</span></>
+                                            <>Drag & Drop files here or <span className="text-purple-400 font-bold underline underline-offset-4 decoration-purple-400/30 hover:decoration-purple-400 hover:text-purple-300 transition-all">Browse</span></>
                                         )}
                                     </p>
                                 </div>
@@ -483,6 +483,13 @@ export default function HomePage() {
                 </AnimatePresence>
 
             </main>
+
+            {/* --- FOOTER --- */}
+            <footer className="relative z-10 w-full py-4 text-center">
+                <p className="text-[10px] text-white/40 font-medium">
+                    © 2025 Blind File. Encrypted in Reston, VA.
+                </p>
+            </footer>
         </div >
     );
 }
