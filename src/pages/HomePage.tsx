@@ -16,9 +16,16 @@ export default function HomePage() {
     const { upload, pause, resume, cancel } = useFileUploader();
     const { getAllFiles } = useUploadStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [session, setSession] = useState<any>(null);
     const navigate = useNavigate();
+
+    const MENU_ITEMS = [
+        { label: 'Pricing', path: '/pricing' },
+        { label: 'FAQ', path: '/faq' },
+        { label: 'Contact Us', path: '/contact' },
+    ];
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -97,32 +104,67 @@ export default function HomePage() {
                         </span>
                     </Link>
 
-                    {/* Desktop Nav */}
-                    <nav className="flex items-center gap-8">
-                        {session ? (
-                            <div className="flex items-center gap-6">
+                    {/* Desktop Nav (Column Layout for Auth + Menu) */}
+                    <nav className="flex flex-col items-end gap-3">
+                        {/* 1. Auth / Profile Link */}
+                        <div className="mb-1">
+                            {session ? (
+                                <div className="flex items-center gap-6">
+                                    <Link
+                                        to="/app"
+                                        className="text-lg font-bold transition-colors hover:text-purple-400 text-white"
+                                    >
+                                        App
+                                    </Link>
+                                    <button
+                                        onClick={() => setIsProfileOpen(true)}
+                                        className="text-lg font-bold transition-colors hover:text-purple-400 text-white flex items-center gap-2"
+                                    >
+                                        <User className="w-5 h-5" />
+                                        Profile
+                                    </button>
+                                </div>
+                            ) : (
                                 <Link
-                                    to="/app"
-                                    className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
+                                    to="/auth"
+                                    className="text-lg font-bold text-white transition-colors hover:text-purple-400"
                                 >
-                                    App
+                                    Sign Up/Login
                                 </Link>
-                                <button
-                                    onClick={() => setIsProfileOpen(true)}
-                                    className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500 flex items-center gap-2"
-                                >
-                                    <User className="w-4 h-4" />
-                                    Profile
-                                </button>
-                            </div>
-                        ) : (
-                            <Link
-                                to="/auth"
-                                className="text-lg font-bold text-white transition-colors hover:text-purple-400"
+                            )}
+                        </div>
+
+                        {/* 2. Desktop Hamburger Menu (Under Auth) */}
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
+                                className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-300 hover:text-white hover:bg-purple-500/20 backdrop-blur-md transition-all shadow-[0_0_15px_rgba(168,85,247,0.15)] group"
                             >
-                                Sign Up/Login
-                            </Link>
-                        )}
+                                {isDesktopMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            </button>
+
+                            <AnimatePresence>
+                                {isDesktopMenuOpen && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                        className="absolute top-full right-0 mt-3 w-48 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-2xl z-50 overflow-hidden"
+                                    >
+                                        {MENU_ITEMS.map((item) => (
+                                            <Link
+                                                key={item.path}
+                                                to={item.path}
+                                                className="block w-full text-left py-2 px-4 text-sm font-medium text-white hover:bg-white/5 hover:text-purple-300 rounded-lg transition-colors"
+                                                onClick={() => setIsDesktopMenuOpen(false)}
+                                            >
+                                                {item.label}
+                                            </Link>
+                                        ))}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </nav>
                 </div>
 
@@ -184,6 +226,19 @@ export default function HomePage() {
                                         Sign Up / Login
                                     </Link>
                                 )}
+
+                                <div className="border-t border-white/10 my-2" />
+
+                                {MENU_ITEMS.map((item) => (
+                                    <Link
+                                        key={item.path}
+                                        to={item.path}
+                                        className="block w-full py-2 px-4 text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        {item.label}
+                                    </Link>
+                                ))}
                             </motion.div>
                         )}
                     </AnimatePresence>
