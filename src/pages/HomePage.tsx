@@ -1,6 +1,6 @@
-import { useCallback, Suspense } from 'react';
+import { useCallback, Suspense, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, ArrowRight } from 'lucide-react';
+import { UploadCloud, ArrowRight, Menu, X } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
@@ -10,11 +10,10 @@ import { Link } from 'react-router-dom';
 
 import logo from '../assets/logo.png';
 
-// ... (existing imports)
-
 export default function HomePage() {
     const { upload, pause, resume, cancel } = useFileUploader();
     const { getAllFiles } = useUploadStore();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const files = getAllFiles();
     const hasFiles = files.length > 0;
@@ -55,27 +54,74 @@ export default function HomePage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="relative z-50 flex items-center justify-between px-8 py-6 max-w-7xl mx-auto w-full"
             >
-                {/* Logo */}
-                <div className="flex items-center gap-3 group cursor-pointer">
-                    <img
-                        src={logo}
-                        alt="Blind File Logo"
-                        className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <span className="font-bold text-xl tracking-wide text-white/90 group-hover:text-white transition-colors">
-                        BLIND FILE
-                    </span>
+                {/* DESKTOP HEADER LAYOUT */}
+                <div className="hidden md:flex items-center justify-between w-full">
+                    {/* Logo */}
+                    <Link to="/" className="flex items-center gap-3 group cursor-pointer">
+                        <img
+                            src={logo}
+                            alt="Blind File Logo"
+                            className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <span className="font-bold text-xl tracking-wide text-white/90 group-hover:text-white transition-colors">
+                            BLIND FILE
+                        </span>
+                    </Link>
+
+                    {/* Desktop Nav */}
+                    <nav className="flex items-center gap-8">
+                        <Link
+                            to="/auth"
+                            className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
+                        >
+                            Sign Up
+                        </Link>
+                    </nav>
                 </div>
 
-                {/* Nav */}
-                <nav className="hidden md:flex items-center gap-8">
-                    <Link
-                        to="/auth"
-                        className="text-sm font-medium transition-colors hover:text-purple-400 text-zinc-500"
-                    >
-                        Sign Up
+                {/* MOBILE HEADER LAYOUT (Centered Logo + Menu) */}
+                <div className="md:hidden w-full flex flex-col items-center relative">
+                    <Link to="/" className="flex flex-col items-center gap-2 group cursor-pointer mb-4">
+                        <img
+                            src={logo}
+                            alt="Blind File Logo"
+                            className="w-20 h-20 object-contain group-hover:scale-105 transition-transform duration-300"
+                        />
+                        <span className="font-bold text-2xl tracking-wide text-white/90 group-hover:text-white transition-colors">
+                            BLIND FILE
+                        </span>
                     </Link>
-                </nav>
+
+                    {/* Hamburger Button */}
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="p-2 rounded-full bg-white/5 border border-white/10 text-white/70 hover:text-white transition-colors"
+                    >
+                        {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+
+                    {/* Mobile Dropdown Menu */}
+                    <AnimatePresence>
+                        {isMenuOpen && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="absolute top-full mt-4 w-48 bg-zinc-900/90 backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-xl z-50 overflow-hidden text-center"
+                            >
+                                <Link
+                                    to="/auth"
+                                    className="block w-full py-3 px-4 text-sm font-medium text-white hover:bg-white/5 rounded-lg transition-colors"
+                                    onClick={() => setIsMenuOpen(false)}
+                                >
+                                    Sign Up / Login
+                                </Link>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+
             </motion.header>
 
             {/* --- MAIN CONTENT --- */}
