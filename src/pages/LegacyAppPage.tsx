@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Zap, Clock, Eye, User } from 'lucide-react';
+import { Shield, Zap, Clock, User } from 'lucide-react';
 import { DropZone } from '../components/DropZone';
 import { UploadCard } from '../components/UploadCard';
 import { UploadStats } from '../components/UploadStats';
@@ -139,9 +139,9 @@ export default function LegacyAppPage() {
                             <span className="text-sm text-silver">24-Hour Auto-Delete</span>
                         </div>
                         <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
-                            <Eye className="w-4 h-4 text-red-500" strokeWidth={1.5} />
-                            <span className="text-sm text-silver line-through opacity-50">
-                                We See Your Data
+                            <Shield className="w-4 h-4 text-emerald-400" />
+                            <span className="text-sm text-silver">
+                                No Logs Kept
                             </span>
                         </div>
                     </motion.div>
