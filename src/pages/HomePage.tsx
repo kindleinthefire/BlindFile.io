@@ -1,6 +1,6 @@
 import { useCallback, Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, ArrowRight, Menu, X, Shield, Zap, Clock, User, CheckCircle } from 'lucide-react';
+import { UploadCloud, ArrowRight, Menu, X, Shield, Zap, Clock, User, CheckCircle, Info } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
@@ -410,8 +410,9 @@ export default function HomePage() {
                                     className="glass rounded-full px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-white/10 transition-colors"
                                 >
                                     <Shield className="w-4 h-4 text-success" />
-                                    <span className="text-sm text-silver">
-                                        Zero-Knowledge Encryption*
+                                    <span className="text-sm text-silver flex items-center gap-1.5">
+                                        Zero-Knowledge Encryption
+                                        <Info className="w-3 h-3 text-white/40" strokeWidth={2} />
                                     </span>
                                 </Link>
                                 <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
