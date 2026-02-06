@@ -10,6 +10,7 @@ import { useUploadStore } from '../store/uploadStore';
 import { supabase } from '../lib/supabase';
 import { formatBytes } from '../lib/crypto';
 import { ProfileModal } from '../components/ProfileModal';
+import { uploadMobileCompatible } from '../lib/mobileUpload';
 
 import logo from '../assets/logo.png';
 
@@ -74,13 +75,14 @@ export default function LegacyAppPage() {
     }, [navigate]);
 
     const handleFilesSelected = useCallback(
-        async (selectedFiles: File[], chunkSize?: number) => {
+        async (selectedFiles: File[], chunkSize?: number, mobileZipMode?: boolean) => {
             const LIMITS: Record<string, number> = {
                 basic: 5 * 1024 * 1024 * 1024,
                 pro: 500 * 1024 * 1024 * 1024,
             };
             // Fallback to basic if tier is somehow guest or undefined in this view
             const limit = LIMITS[tier] || LIMITS['basic'];
+            const { addFile, updateFile } = useUploadStore.getState();
 
             for (const file of selectedFiles) {
                 // If chunkSize is provided (Wizard flow), we trust the Wizard's checking.
@@ -89,7 +91,41 @@ export default function LegacyAppPage() {
                     alert(`Limit Exceeded. You are on the ${tier.toUpperCase()} tier (Limit: ${formatBytes(limit)}). Upgrade to Pro for 500GB.`);
                     return;
                 }
-                upload(file, chunkSize);
+
+                // Mobile ZIP Mode: Use ZipCrypto for iOS compatibility
+                if (mobileZipMode) {
+                    const localId = addFile(file);
+                    updateFile(localId, { status: 'encrypting' });
+
+                    const result = await uploadMobileCompatible(file, {
+                        onProgress: (percent) => {
+                            updateFile(localId, {
+                                encryptionProgress: percent,
+                                uploadProgress: percent
+                            });
+                        },
+                        onComplete: (downloadUrl) => {
+                            updateFile(localId, {
+                                status: 'completed',
+                                progress: 100,
+                                downloadUrl,
+                            });
+                        },
+                        onError: (error) => {
+                            updateFile(localId, {
+                                status: 'error',
+                                error: error.message,
+                            });
+                        },
+                    });
+
+                    if (result) {
+                        updateFile(localId, { encryptionKey: result.password });
+                    }
+                } else {
+                    // Standard AES-256 flow
+                    upload(file, chunkSize);
+                }
             }
         },
         [upload, tier]
@@ -269,7 +305,7 @@ export default function LegacyAppPage() {
                     )}
 
                     {/* Upload Wizard (Replacing standard DropZone) */}
-                    <UploadWizard onComplete={(file, chunkSize) => handleFilesSelected([file], chunkSize)} />
+                    <UploadWizard onComplete={(file, chunkSize, mobileZipMode) => handleFilesSelected([file], chunkSize, mobileZipMode)} />
 
                     {/* Upload list */}
                     <AnimatePresence>

@@ -9,11 +9,15 @@ import {
     ArrowLeft,
     Loader2,
     Check,
+    Copy,
+    Download,
+    Apple,
 } from 'lucide-react';
 import { CountdownTimer } from '../components/CountdownTimer';
 import { api, DownloadInfo } from '../lib/api';
 import { importKey, formatBytes, decryptMetadata } from '../lib/crypto';
 import { FileDownloader } from '../lib/fileDownloader';
+import { parseDownloadHash } from '../lib/mobileUpload';
 import logo from '../assets/logo.png';
 
 type DownloadStatus =
@@ -37,6 +41,11 @@ export default function DownloadPage() {
     const [loadingMessage, setLoadingMessage] = useState('Initializing secure value...');
     const downloadManager = useRef<FileDownloader | null>(null);
 
+    // Mobile ZIP detection
+    const [isMobileZip, setIsMobileZip] = useState(false);
+    const [originalFilename, setOriginalFilename] = useState<string | null>(null);
+    const [passwordCopied, setPasswordCopied] = useState(false);
+
     // Auto-detect Mobile (iOS/Android)
     useEffect(() => {
         const ua = navigator.userAgent;
@@ -45,11 +54,16 @@ export default function DownloadPage() {
         }
     }, []);
 
-    // Extract encryption key from URL hash
+    // Extract encryption key from URL hash - with mobile ZIP detection
     useEffect(() => {
         const hash = window.location.hash.slice(1);
         if (hash) {
-            setEncryptionKey(hash);
+            const parsed = parseDownloadHash(hash);
+            setEncryptionKey(parsed.password);
+            setIsMobileZip(parsed.isMobileZip);
+            if (parsed.originalFilename) {
+                setOriginalFilename(parsed.originalFilename);
+            }
         }
     }, []);
 
@@ -318,13 +332,19 @@ export default function DownloadPage() {
                                 exit={{ opacity: 0 }}
                             >
                                 {/* File icon */}
-                                <div className="w-16 h-16 rounded-2xl bg-stealth-700 flex items-center justify-center mx-auto mb-4 border border-deep-purple/30">
-                                    <File className="w-8 h-8 text-deep-purple" />
+                                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 border ${isMobileZip
+                                        ? 'bg-green-500/10 border-green-500/30'
+                                        : 'bg-stealth-700 border-deep-purple/30'
+                                    }`}>
+                                    {isMobileZip
+                                        ? <Apple className="w-8 h-8 text-green-400" />
+                                        : <File className="w-8 h-8 text-deep-purple" />
+                                    }
                                 </div>
 
                                 {/* File info */}
                                 <h2 className="text-xl font-bold text-silver mb-1 truncate">
-                                    {fileInfo.fileName}
+                                    {isMobileZip && originalFilename ? originalFilename : fileInfo.fileName}
                                 </h2>
                                 <p className="text-sm text-silver/60 font-mono mb-4">
                                     {formatBytes(fileInfo.fileSize)}
@@ -335,46 +355,113 @@ export default function DownloadPage() {
                                     <CountdownTimer expiresAt={fileInfo.expiresAt} />
                                 </div>
 
-                                {/* Key warning */}
-                                {!encryptionKey && (
-                                    <div className="glass rounded-xl p-4 mb-6 text-left">
-                                        <div className="flex items-start gap-3">
-                                            <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
-                                            <div>
-                                                <p className="text-sm text-yellow-500 font-medium">
-                                                    Missing Encryption Key
-                                                </p>
-                                                <p className="text-xs text-silver/60 mt-1">
-                                                    The decryption key is missing from the URL. Make sure
-                                                    you're using the complete download link.
-                                                </p>
+                                {/* MOBILE ZIP UI */}
+                                {isMobileZip && encryptionKey && (
+                                    <div className="space-y-4 mb-6">
+                                        {/* Password Card */}
+                                        <div className="glass rounded-xl p-4 text-left border border-green-500/20">
+                                            <p className="text-xs text-green-400 font-medium mb-2">
+                                                🔐 ZIP Password (Copy this!)
+                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <code className="flex-1 bg-black/30 px-3 py-2 rounded-lg text-sm font-mono text-white break-all">
+                                                    {encryptionKey}
+                                                </code>
+                                                <button
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(encryptionKey);
+                                                        setPasswordCopied(true);
+                                                        setTimeout(() => setPasswordCopied(false), 2000);
+                                                    }}
+                                                    className={`p-2 rounded-lg transition-colors ${passwordCopied
+                                                            ? 'bg-green-500/20 text-green-400'
+                                                            : 'bg-white/5 text-silver hover:bg-white/10'
+                                                        }`}
+                                                >
+                                                    {passwordCopied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                                                </button>
                                             </div>
                                         </div>
+
+                                        {/* Rename Warning */}
+                                        <div className="glass rounded-xl p-4 text-left border border-yellow-500/20">
+                                            <div className="flex items-start gap-3">
+                                                <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+                                                <div>
+                                                    <p className="text-sm text-yellow-500 font-medium">
+                                                        Filename Obfuscated
+                                                    </p>
+                                                    <p className="text-xs text-silver/60 mt-1">
+                                                        The file inside the ZIP is named <code className="text-white">blindfile_content</code> for privacy.
+                                                        After extracting, rename it back to: <span className="text-white font-medium">{originalFilename}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Security badge */}
+                                        <div className="flex items-center justify-center gap-2 text-xs text-silver/50">
+                                            <Shield className="w-4 h-4 text-green-400" />
+                                            <span>Password-protected ZIP (ZipCrypto)</span>
+                                        </div>
+
+                                        {/* Direct Download Button */}
+                                        <a
+                                            href={api.getDownloadUrl(id!)}
+                                            download
+                                            className="w-full py-4 rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-300 bg-gradient-to-r from-green-500 to-emerald-600 hover:opacity-90 text-white"
+                                        >
+                                            <Download className="w-5 h-5" />
+                                            Download ZIP
+                                        </a>
                                     </div>
                                 )}
 
-                                {/* Security badge */}
-                                <div className="flex items-center justify-center gap-2 text-xs text-silver/50 mb-6">
-                                    <Shield className="w-4 h-4 text-success" />
-                                    <span>End-to-end encrypted with AES-256-GCM</span>
-                                </div>
+                                {/* STANDARD AES UI */}
+                                {!isMobileZip && (
+                                    <>
+                                        {/* Key warning */}
+                                        {!encryptionKey && (
+                                            <div className="glass rounded-xl p-4 mb-6 text-left">
+                                                <div className="flex items-start gap-3">
+                                                    <AlertCircle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+                                                    <div>
+                                                        <p className="text-sm text-yellow-500 font-medium">
+                                                            Missing Encryption Key
+                                                        </p>
+                                                        <p className="text-xs text-silver/60 mt-1">
+                                                            The decryption key is missing from the URL. Make sure
+                                                            you're using the complete download link.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
 
-                                {/* Download button */}
-                                <button
-                                    onClick={handleDownload}
-                                    disabled={!encryptionKey}
-                                    className={`
-                    w-full py-4 rounded-xl font-medium flex items-center justify-center gap-2
-                    transition-all duration-300
-                    ${encryptionKey
-                                            ? 'bg-gradient-to-r from-deep-purple to-success hover:opacity-90 glow-purple text-white'
-                                            : 'bg-stealth-700 text-silver/50 cursor-not-allowed'
-                                        }
-                  `}
-                                >
-                                    <Lock className="w-5 h-5" />
-                                    Decrypt & Download
-                                </button>
+                                        {/* Security badge */}
+                                        <div className="flex items-center justify-center gap-2 text-xs text-silver/50 mb-6">
+                                            <Shield className="w-4 h-4 text-success" />
+                                            <span>End-to-end encrypted with AES-256-GCM</span>
+                                        </div>
+
+                                        {/* Download button */}
+                                        <button
+                                            onClick={handleDownload}
+                                            disabled={!encryptionKey}
+                                            className={`
+                                                w-full py-4 rounded-xl font-medium flex items-center justify-center gap-2
+                                                transition-all duration-300
+                                                ${encryptionKey
+                                                    ? 'bg-gradient-to-r from-deep-purple to-success hover:opacity-90 glow-purple text-white'
+                                                    : 'bg-stealth-700 text-silver/50 cursor-not-allowed'
+                                                }
+                                            `}
+                                        >
+                                            <Lock className="w-5 h-5" />
+                                            Decrypt & Download
+                                        </button>
+                                    </>
+                                )}
                             </motion.div>
                         )}
 
