@@ -214,7 +214,7 @@ export default function PricingPage() {
                 {/* BOTTOM COPYRIGHT */}
                 <footer className="relative z-10 w-full py-8 text-center mt-10">
                     <p className="text-[10px] text-white/40 font-medium">
-                        © 2025 Blind File. Encrypted in Reston, VA.
+                        © 2026 Blind File. Engineered in Reston, VA.
                     </p>
                 </footer>
 

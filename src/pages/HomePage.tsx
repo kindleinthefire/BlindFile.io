@@ -491,7 +491,7 @@ export default function HomePage() {
             {/* --- FOOTER --- */}
             <footer className="relative z-10 w-full py-4 text-center">
                 <p className="text-[10px] text-white/40 font-medium">
-                    © 2025 Blind File. Encrypted in Reston, VA.
+                    © 2026 Blind File. Engineered in Reston, VA.
                 </p>
             </footer>
         </div >
