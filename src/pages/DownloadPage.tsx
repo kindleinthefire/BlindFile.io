@@ -130,8 +130,26 @@ export default function DownloadPage() {
                 // 3. Establish Channel
                 const channel = new MessageChannel();
 
+                // --- HEARTBEAT FOR IOS ---
+                // iOS Safari kills Service Workers after 30s of "idleness" even if streaming.
+                // We send a heartbeat to keep it alive during the handshake.
+                const heartbeatInterval = setInterval(() => {
+                    if (navigator.serviceWorker.controller) {
+                        navigator.serviceWorker.controller.postMessage({ type: 'HEARTBEAT' });
+                    }
+                }, 5000);
+
+                // Safety timeout to clear heartbeat if it hangs
+                const heartbeatTimeout = setTimeout(() => {
+                    clearInterval(heartbeatInterval);
+                }, 30000);
+
                 channel.port1.onmessage = (event) => {
                     if (event.data === 'READY') {
+                        // Clear heartbeats immediately upon connection success
+                        clearInterval(heartbeatInterval);
+                        clearTimeout(heartbeatTimeout);
+
                         // 4. Trigger Native Download
                         setStatus('complete'); // Optimistically update UI
                         window.location.href = virtualUrl;

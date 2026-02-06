@@ -28,7 +28,7 @@ const STEPS = [
         icon: Server,
         title: "CHUNKED UPLOAD",
         subtitle: "The Transport",
-        description: "For massive files (up to 500GB), we split the encrypted static into manageable chunks. These travel through our secure tunnel to Cloudflare R2 storage, a distributed global network."
+        description: "For massive files (up to 500GB), we split the encrypted static into manageable chunks. These travel through our secure tunnel to a distributed global network."
     },
     {
         icon: Globe,
