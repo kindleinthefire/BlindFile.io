@@ -15,7 +15,7 @@ interface UploadPartTask {
 }
 
 interface UseFileUploaderReturn {
-    upload: (file: File) => Promise<string | null>;
+    upload: (file: File, chunkSize?: number) => Promise<string | null>;
     pause: (id: string) => void;
     resume: (id: string) => void;
     cancel: (id: string) => void;
@@ -36,7 +36,7 @@ export function useFileUploader(): UseFileUploaderReturn {
     const queuesRef = useRef<Map<string, ConcurrentQueue<UploadPartTask>>>(new Map());
     const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
 
-    const upload = useCallback(async (file: File): Promise<string | null> => {
+    const upload = useCallback(async (file: File, chunkSize?: number): Promise<string | null> => {
         const id = addFile(file);
         const abortController = new AbortController();
         abortControllersRef.current.set(id, abortController);
@@ -51,7 +51,7 @@ export function useFileUploader(): UseFileUploaderReturn {
             updateFile(id, { encryptionKey: keyString });
 
             // Delegate to the strict backpressure uploader
-            await uploadFile(file, id, updateFile, abortController.signal);
+            await uploadFile(file, id, updateFile, abortController.signal, chunkSize);
 
             // cleanup is handled inside uploadFile for the most part, but we need to ensure local maps are cleared
             queuesRef.current.delete(id);

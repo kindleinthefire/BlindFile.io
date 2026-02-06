@@ -40,7 +40,8 @@ export async function uploadFile(
     file: File,
     fileId: string,
     updateFile: (id: string, updates: Partial<UploadFile>) => void,
-    abortSignal: AbortSignal
+    abortSignal: AbortSignal,
+    chunkSize?: number
 ): Promise<string | null> {
     try {
         updateFile(fileId, { status: 'encrypting' });
@@ -55,7 +56,13 @@ export async function uploadFile(
 
         // Step 2: Initialize upload to get partSize
         // We send "encrypted-payload.bin" to server. Server ignores it for storage but uses it for validation if needed.
-        const initResponse = await api.initUpload("encrypted-payload.bin", file.size, "application/octet-stream", encryptedMetadata);
+        const initResponse = await api.initUpload(
+            "encrypted-payload.bin",
+            file.size,
+            "application/octet-stream",
+            encryptedMetadata,
+            chunkSize
+        );
         updateFile(fileId, {
             partSize: initResponse.partSize,
             totalParts: initResponse.totalParts,

@@ -21,8 +21,12 @@ self.addEventListener('message', (event) => {
     }
 
     if (data.type === 'REGISTER_DOWNLOAD') {
-        const { url, filename, size, remoteUrl, key } = data;
-        streamMap.set(url, { filename, size, remoteUrl, key });
+        const { url, filename, size, remoteUrl, key, chunkSize } = data;
+        // Default to legacy 10MB if not provided
+        const plainChunkSize = chunkSize || PLAIN_CHUNK_SIZE;
+        const encryptedChunkSize = plainChunkSize + IV_LENGTH + TAG_LENGTH;
+
+        streamMap.set(url, { filename, size, remoteUrl, key, encryptedChunkSize });
         if (event.ports[0]) event.ports[0].postMessage('READY');
     }
 });
@@ -38,9 +42,10 @@ self.addEventListener('fetch', (event) => {
             const response = await fetch(state.remoteUrl);
             if (!response.body) return new Response("Network Error", { status: 500 });
 
+            const ENCRYPTED_CHUNK_SIZE = state.encryptedChunkSize;
+
             // OPTIMIZED: Array-of-Chunks Buffering (No GC Thrashing)
-            // Instead of concatenating huge Uint8Arrays, we just push small chunks to an array
-            // and only join them when we are sure we have enough data.
+            // ... (rest of the logic uses local ENCRYPTED_CHUNK_SIZE)
             let chunkQueue = [];
             let totalQueueBytes = 0;
 

@@ -19,6 +19,7 @@ interface InitRequest {
     fileSize: number;
     contentType?: string;
     encryptedMetadata?: string;
+    chunkSize?: number;
 }
 
 interface SignRequest {
@@ -156,8 +157,8 @@ app.post('/upload/init', async (c) => {
     }
 
     try {
-        // Calculate optimal part size for profit protection
-        const partSize = calculateOptimalPartSize(body.fileSize);
+        // Calculate optimal part size (Honor client desire if provided, otherwise profit-protect)
+        const partSize = body.chunkSize || calculateOptimalPartSize(body.fileSize);
         const totalParts = Math.ceil(body.fileSize / partSize);
 
         // Generate unique identifiers
@@ -165,15 +166,16 @@ app.post('/upload/init', async (c) => {
         const storedFileName = `${id}.bin`; // "Total Blindness": Filename is now randomized
         const objectKey = `uploads/${id}/${storedFileName}`;
 
-        // Create multipart upload in R2
+        // Create Multipart Upload
         const multipartUpload = await env.BUCKET.createMultipartUpload(objectKey, {
             httpMetadata: {
                 contentType: body.contentType || 'application/octet-stream',
             },
             customMetadata: {
-                originalName: body.fileName,
-                uploadId: id,
+                originalName: body.fileName, // Encrypted if using encryptedMetadata
                 encryptedMetadata: body.encryptedMetadata || '',
+                // CRITICAL: We must store the chunk size so the downloader knows how to slice/decrypt
+                chunkSize: partSize.toString()
             },
         });
 
@@ -517,11 +519,18 @@ app.get('/download/:id', async (c) => {
         }
 
         let encryptedMetadata: string | undefined;
+        let chunkSize: number | undefined;
+
         try {
             const objectKey = `uploads/${upload.id}/${upload.file_name}`;
             const head = await env.BUCKET.head(objectKey);
-            if (head?.customMetadata?.encryptedMetadata) {
-                encryptedMetadata = head.customMetadata.encryptedMetadata;
+            if (head?.customMetadata) {
+                if (head.customMetadata.encryptedMetadata) {
+                    encryptedMetadata = head.customMetadata.encryptedMetadata;
+                }
+                if (head.customMetadata.chunkSize) {
+                    chunkSize = parseInt(head.customMetadata.chunkSize, 10);
+                }
             }
         } catch (e) {
             console.warn('Failed to fetch metadata from R2', e);
@@ -536,6 +545,7 @@ app.get('/download/:id', async (c) => {
             createdAt: upload.created_at,
             partSize: upload.part_size,
             encryptedMetadata,
+            chunkSize, // Return to client so SW knows how to slice
         });
     } catch (error) {
         console.error('Download info error:', error);

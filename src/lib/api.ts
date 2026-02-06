@@ -43,6 +43,7 @@ export interface DownloadInfo {
     createdAt: string;
     partSize: number;
     encryptedMetadata?: string;
+    chunkSize?: number;
 }
 
 class ApiClient {
@@ -87,11 +88,12 @@ class ApiClient {
         fileName: string,
         fileSize: number,
         contentType?: string,
-        encryptedMetadata?: string
+        encryptedMetadata?: string,
+        chunkSize?: number
     ): Promise<InitUploadResponse> {
         return this.request<InitUploadResponse>('/upload/init', {
             method: 'POST',
-            body: JSON.stringify({ fileName, fileSize, contentType, encryptedMetadata }),
+            body: JSON.stringify({ fileName, fileSize, contentType, encryptedMetadata, chunkSize }),
         });
     }
 

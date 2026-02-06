@@ -163,7 +163,8 @@ export default function DownloadPage() {
                     filename: fileInfo.fileName,
                     size: fileInfo.fileSize,
                     remoteUrl: remoteUrl,
-                    key: key
+                    key: key,
+                    chunkSize: fileInfo.chunkSize || 10485760 // Default to 10MB to maintain backward compatibility
                 }, [channel.port2]);
 
             } catch (err) {

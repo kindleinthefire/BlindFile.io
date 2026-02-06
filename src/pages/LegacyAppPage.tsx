@@ -2,7 +2,7 @@ import { useCallback, useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Clock, User, CheckCircle, Menu, X } from 'lucide-react';
-import { DropZone } from '../components/DropZone';
+import { UploadWizard } from '../components/UploadWizard';
 import { UploadCard } from '../components/UploadCard';
 import { UploadStats } from '../components/UploadStats';
 import { useFileUploader } from '../hooks/useFileUploader';
@@ -73,11 +73,8 @@ export default function LegacyAppPage() {
         return () => subscription.unsubscribe();
     }, [navigate]);
 
-
-
-
     const handleFilesSelected = useCallback(
-        async (selectedFiles: File[]) => {
+        async (selectedFiles: File[], chunkSize?: number) => {
             const LIMITS: Record<string, number> = {
                 basic: 5 * 1024 * 1024 * 1024,
                 pro: 500 * 1024 * 1024 * 1024,
@@ -86,11 +83,13 @@ export default function LegacyAppPage() {
             const limit = LIMITS[tier] || LIMITS['basic'];
 
             for (const file of selectedFiles) {
+                // If chunkSize is provided (Wizard flow), we trust the Wizard's checking.
+                // But double check against account limits.
                 if (file.size > limit) {
                     alert(`Limit Exceeded. You are on the ${tier.toUpperCase()} tier (Limit: ${formatBytes(limit)}). Upgrade to Pro for 500GB.`);
                     return;
                 }
-                upload(file);
+                upload(file, chunkSize);
             }
         },
         [upload, tier]
@@ -269,8 +268,8 @@ export default function LegacyAppPage() {
                         </div>
                     )}
 
-                    {/* Drop zone */}
-                    <DropZone onFilesSelected={handleFilesSelected} disabled={false} />
+                    {/* Upload Wizard (Replacing standard DropZone) */}
+                    <UploadWizard onComplete={(file, chunkSize) => handleFilesSelected([file], chunkSize)} />
 
                     {/* Upload list */}
                     <AnimatePresence>
