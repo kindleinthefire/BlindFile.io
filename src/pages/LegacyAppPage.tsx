@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Zap, Clock, User, CheckCircle } from 'lucide-react';
+import { Shield, Zap, Clock, User, CheckCircle, Menu, X } from 'lucide-react';
 import { DropZone } from '../components/DropZone';
 import { UploadCard } from '../components/UploadCard';
 import { UploadStats } from '../components/UploadStats';
@@ -17,10 +17,19 @@ export default function LegacyAppPage() {
     const { upload, pause, resume, cancel } = useFileUploader();
     const { getAllFiles, stats } = useUploadStore();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
     const [session, setSession] = useState<any>(null);
     const [tier, setTier] = useState<string>('basic');
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+
+    const MENU_ITEMS = [
+        { label: 'How It Works', path: '/how-it-works' },
+        { label: 'Pricing', path: '/pricing' },
+        { label: 'FAQ', path: '/faq' },
+        { label: 'Privacy Policy', path: '/privacy' },
+        { label: 'Contact Us', path: '/contact' },
+    ];
 
     useEffect(() => {
         const fetchTier = async (userId: string) => {
@@ -88,35 +97,87 @@ export default function LegacyAppPage() {
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
             >
-                <div className="container mx-auto px-4 py-4">
+                <div className="container mx-auto px-4 py-4 max-w-7xl">
                     <div className="flex items-center justify-between">
-                        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                        {/* Logo */}
+                        <Link to="/" className="flex items-center gap-3 group cursor-pointer">
                             <img
                                 src={logo}
                                 alt="Blind File Logo"
-                                className="w-10 h-10 object-contain"
+                                className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300"
                             />
                             <div>
-                                <h1 className="font-bold text-xl text-silver">Blind File</h1>
+                                <h1 className="font-bold text-xl text-silver group-hover:text-white transition-colors">Blind File</h1>
                                 <p className="text-xs text-silver/50">
                                     Zero-Knowledge Transfer
                                 </p>
                             </div>
                         </Link>
 
-                        <div className="flex items-center gap-4">
-                            {session ? (
+                        {/* Desktop Nav (Profile + Menu) */}
+                        <nav className="flex items-center gap-4">
+                            {/* Profile Button */}
+                            <button
+                                onClick={() => setIsProfileOpen(true)}
+                                className="hidden md:flex items-center gap-2 text-sm font-bold transition-colors hover:text-purple-400 text-silver/80"
+                            >
+                                <User className="w-5 h-5" />
+                                <span>Profile</span>
+                            </button>
+
+                            {/* Hamburger Menu */}
+                            <div className="relative">
                                 <button
-                                    onClick={() => setIsProfileOpen(true)}
-                                    className="p-2 rounded-lg hover:bg-white/5 transition-colors flex items-center gap-2 text-silver/60 hover:text-silver"
+                                    onClick={() => setIsDesktopMenuOpen(!isDesktopMenuOpen)}
+                                    className="p-2 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-300 hover:text-white hover:bg-purple-500/20 backdrop-blur-md transition-all shadow-[0_0_15px_rgba(168,85,247,0.15)] group"
                                 >
-                                    <User className="w-5 h-5" />
-                                    <span className="text-sm font-medium hidden md:inline">Profile</span>
+                                    {isDesktopMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                                 </button>
-                            ) : (
-                                <div />
-                            )}
-                        </div>
+
+                                <AnimatePresence>
+                                    {isDesktopMenuOpen && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            className="absolute top-full right-0 mt-3 w-48 bg-[rgba(20,20,20,0.95)] backdrop-blur-xl border border-white/10 rounded-xl p-2 shadow-2xl z-50 overflow-hidden"
+                                        >
+                                            {/* Mobile Profile Link (Only visible on mobile inside menu) */}
+                                            <button
+                                                onClick={() => {
+                                                    setIsProfileOpen(true);
+                                                    setIsDesktopMenuOpen(false);
+                                                }}
+                                                className="md:hidden block w-full text-left py-2 px-4 text-sm font-medium text-white hover:bg-white/5 hover:text-purple-300 rounded-lg transition-colors border-b border-white/10 mb-1"
+                                            >
+                                                Profile
+                                            </button>
+
+                                            {MENU_ITEMS.map((item) => (
+                                                <Link
+                                                    key={item.path}
+                                                    to={item.path}
+                                                    className="block w-full text-left py-2 px-4 text-sm font-medium text-white hover:bg-white/5 hover:text-purple-300 rounded-lg transition-colors"
+                                                    onClick={() => setIsDesktopMenuOpen(false)}
+                                                >
+                                                    {item.label}
+                                                </Link>
+                                            ))}
+                                            <div className="border-t border-white/10 my-1" />
+                                            <button
+                                                onClick={() => {
+                                                    supabase.auth.signOut();
+                                                    setIsDesktopMenuOpen(false);
+                                                }}
+                                                className="block w-full text-left py-2 px-4 text-sm font-medium text-red-400 hover:bg-white/5 rounded-lg transition-colors"
+                                            >
+                                                Sign Out
+                                            </button>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </nav>
                     </div>
                 </div>
             </motion.header>
