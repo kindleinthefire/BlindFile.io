@@ -405,12 +405,15 @@ export default function HomePage() {
                                 animate={{ y: 0, opacity: 1 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
+                                <Link
+                                    to="/faq#mobile-encryption"
+                                    className="glass rounded-full px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-white/10 transition-colors"
+                                >
                                     <Shield className="w-4 h-4 text-success" />
                                     <span className="text-sm text-silver">
-                                        Zero-Knowledge Encryption
+                                        Zero-Knowledge Encryption*
                                     </span>
-                                </div>
+                                </Link>
                                 <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
                                     <Zap className="w-4 h-4 text-deep-purple" />
                                     <span className="text-sm text-silver">500GB Max Size</span>
