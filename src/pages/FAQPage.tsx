@@ -68,7 +68,7 @@ const FAQ_CATEGORIES = [
             {
                 id: "edge-acceleration",
                 q: "What is \"Global Edge Acceleration\"?",
-                a: "Instead of routing your upload to a single server in Virginia, we route your data to the nearest Edge Node (a server physically close to you). We utilize the Cloudflare R2 network to ensure your upload saturates your entire internet bandwidth. We do not throttle speeds—if you have a Gigabit connection, you get Gigabit performance."
+                a: "Instead of forcing your data to travel halfway across the world to a centralized hub, we route your payload to the nearest Global Edge Node. Our distributed Tier-1 network ensures your upload saturates your entire available bandwidth. We do not throttle speeds—if you have a Gigabit connection, you get Gigabit performance."
             },
             {
                 id: "pro-vs-unlimited",
