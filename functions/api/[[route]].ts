@@ -62,8 +62,8 @@ function generateUUID(): string {
 }
 
 function getExpirationTime(): string {
-    // 12 hours from now
-    const expires = new Date(Date.now() + 12 * 60 * 60 * 1000);
+    // 24 hours from now
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     return expires.toISOString();
 }
 
