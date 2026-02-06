@@ -37,15 +37,6 @@ export default function DownloadPage() {
     const [loadingMessage, setLoadingMessage] = useState('Initializing secure value...');
     const downloadManager = useRef<FileDownloader | null>(null);
 
-    const LOADING_MESSAGES = [
-        "Handshaking with server...",
-        "Validating decryption keys...",
-        "Downloading encrypted chunks...",
-        "Decrypting file in memory...",
-        "Checking integrity...",
-        "Preparing download...",
-    ];
-
     // Auto-detect Mobile (iOS/Android)
     useEffect(() => {
         const ua = navigator.userAgent;
