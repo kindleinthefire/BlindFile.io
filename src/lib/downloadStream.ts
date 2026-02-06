@@ -23,19 +23,20 @@ export class DownloadStreamManager {
         const virtualUrl = `/stream-download/${encodeURIComponent(virtualFileName)}`;
         const remoteUrl = api.getDownloadUrl(this.id);
 
-        // Use the chunkSize from server metadata, or fallback to fileInfo.partSize if missing.
-        // It's critical this matches what was used during encryption.
-        // If the server provided 'chunkSize' in the metadata response, use that.
-        // Otherwise default to 10MB (legacy uploads).
-        const chunkSize = this.fileInfo.chunkSize || this.fileInfo.partSize || 10485760;
+        // Mobile Defaults: Hardcode fallback chunkSize to 1MB (not 10MB) on mobile
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const defaultChunkSize = isMobile ? 1048576 : 10485760;
 
-        // 2. The Handshake Promise
-        // We MUST wait for the SW to say "I'm ready" before we trigger the browser download.
-        // Otherwise, the browser request hits the network before the SW has registered the route map.
-        const handshake = new Promise<void>((resolve, reject) => {
+        // Use the chunkSize from server metadata, or fallback
+        const chunkSize = this.fileInfo.chunkSize || this.fileInfo.partSize || defaultChunkSize;
+
+        // 2. The "Hail Mary" Handshake
+        // Race the "READY" response against a 2-second timeout.
+        const handshake = new Promise<void>((resolve) => {
             const timeout = setTimeout(() => {
-                reject(new Error("Service Worker handshake timed out (3s). It may be sleeping or busy."));
-            }, 3000);
+                console.warn("SW Blind Navigation: Handshake timed out (2s). Proceeding anyway.");
+                resolve(); // Proceed anyway
+            }, 2000);
 
             channel.port1.onmessage = (event) => {
                 if (event.data === 'READY') {
@@ -56,14 +57,13 @@ export class DownloadStreamManager {
             chunkSize: chunkSize
         }, [channel.port2]);
 
-        // 4. Wait for readiness, then trigger
+        // 4. Wait for readiness (or timeout), then trigger
         try {
             await handshake;
-            // SW is definitely ready now.
+            // SW is either ready or we are forcing it
             window.location.href = virtualUrl;
         } catch (err) {
-            console.error("Download Handshake Failed:", err);
-            // Optionally retry or fallback
+            console.error("Download Start Failed:", err);
             throw err;
         }
     }

@@ -1,4 +1,4 @@
-const SW_VERSION = 'v5-ios-stable';
+const SW_VERSION = 'v6-ios-fix';
 const streamMap = new Map();
 
 // --- CONFIGURATION ---
