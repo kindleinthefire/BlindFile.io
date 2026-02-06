@@ -7,6 +7,7 @@ import { useUploadStore } from '../store/uploadStore';
 import { ThreeBackground } from '../components/ThreeBackground';
 import { supabase } from '../lib/supabase';
 import { ProfileModal } from '../components/ProfileModal';
+import { ShootingStarsOverlay } from '../components/ShootingStarsOverlay';
 
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -109,6 +110,9 @@ export default function HomePage() {
             <Suspense fallback={<div className="absolute inset-0 bg-black" />}>
                 <ThreeBackground />
             </Suspense>
+
+            {/* --- SHOOTING STARS FOREGROUND --- */}
+            <ShootingStarsOverlay />
 
             {/* --- HEADER --- */}
             <motion.header
