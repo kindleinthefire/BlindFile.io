@@ -1,6 +1,6 @@
 import { useCallback, Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, ArrowRight, Menu, X, Shield, Zap, Clock, User, CheckCircle, Info, Monitor, Apple, Lock, AlertTriangle } from 'lucide-react';
+import { UploadCloud, ArrowRight, Menu, X, Shield, Zap, Clock, User, CheckCircle, Info, Monitor, Apple, Lock, AlertTriangle, MessageSquare, Feather, Copy, Check } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
@@ -9,6 +9,8 @@ import { supabase } from '../lib/supabase';
 import { ProfileModal } from '../components/ProfileModal';
 import { ShootingStarsOverlay } from '../components/ShootingStarsOverlay';
 import { uploadMobileCompatible } from '../lib/mobileUpload';
+import { encryptMessage, generateBlindTextUrl } from '../lib/messageEncryption';
+import { api } from '../lib/api';
 
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -29,6 +31,14 @@ export default function HomePage() {
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [modalStep, setModalStep] = useState<'device' | 'password'>('device');
     const [mobilePassword, setMobilePassword] = useState('');
+
+    // BlindText (Secure Message) state
+    const [uploadMode, setUploadMode] = useState<'file' | 'message'>('file');
+    const [messageText, setMessageText] = useState('');
+    const [messagePassword, setMessagePassword] = useState('');
+    const [isCreatingLink, setIsCreatingLink] = useState(false);
+    const [blindTextLink, setBlindTextLink] = useState<string | null>(null);
+    const [linkCopied, setLinkCopied] = useState(false);
 
     const MENU_ITEMS = [
         { label: 'How It Works', path: '/how-it-works' },
@@ -161,6 +171,68 @@ export default function HomePage() {
         e.preventDefault();
         e.stopPropagation();
     }, []);
+
+    // BlindText: Handle secure message upload
+    const handleMessageUpload = async () => {
+        if (!messageText.trim() || !messagePassword.trim()) {
+            return;
+        }
+
+        setIsCreatingLink(true);
+        setBlindTextLink(null);
+
+        try {
+            // 1. Encrypt message with password
+            const { encryptedBlob, salt } = await encryptMessage(messageText, messagePassword);
+
+            // 2. Upload encrypted blob to R2
+            const initResponse = await api.initUpload(
+                'message.blindtext',
+                encryptedBlob.size,
+                'application/octet-stream'
+            );
+
+            // Upload as single part
+            const data = await encryptedBlob.arrayBuffer();
+            const uploadResult = await api.uploadPart(
+                initResponse.id,
+                initResponse.uploadId,
+                initResponse.uploadId,
+                1,
+                data
+            );
+
+            // Complete upload
+            await api.completeUpload(initResponse.id, [
+                { partNumber: uploadResult.partNumber, etag: uploadResult.etag }
+            ]);
+
+            // 3. Generate BlindText URL (password NOT in URL, only salt)
+            const url = generateBlindTextUrl(initResponse.id, salt);
+            setBlindTextLink(url);
+
+        } catch (error) {
+            console.error('BlindText upload failed:', error);
+            alert('Failed to create secure message. Please try again.');
+        } finally {
+            setIsCreatingLink(false);
+        }
+    };
+
+    const copyBlindTextLink = () => {
+        if (blindTextLink) {
+            navigator.clipboard.writeText(blindTextLink);
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        }
+    };
+
+    const resetBlindText = () => {
+        setMessageText('');
+        setMessagePassword('');
+        setBlindTextLink(null);
+        setUploadMode('file');
+    };
 
     return (
         <div className="relative min-h-screen bg-black overflow-hidden flex flex-col font-sans selection:bg-purple-500/30 text-white">
@@ -571,27 +643,18 @@ export default function HomePage() {
 
                             {/* THE GLASS PANEL */}
                             <div
-                                onDrop={onDrop}
-                                onDragOver={onDragOver}
-                                className="
-                                    relative w-full aspect-video rounded-[2rem]
-                                    bg-gradient-to-br from-purple-500/20 via-purple-900/30 to-black/40
+                                onDrop={uploadMode === 'file' ? onDrop : undefined}
+                                onDragOver={uploadMode === 'file' ? onDragOver : undefined}
+                                className={`
+                                    relative w-full ${uploadMode === 'message' ? 'min-h-[400px]' : 'aspect-video'} rounded-[2rem]
+                                    bg-gradient-to-br ${uploadMode === 'message' ? 'from-emerald-500/20 via-teal-900/30 to-black/40' : 'from-purple-500/20 via-purple-900/30 to-black/40'}
                                     backdrop-blur-2xl
-                                    border border-purple-400/20
-                                    shadow-[0_0_60px_-15px_rgba(124,58,237,0.4)]
+                                    border ${uploadMode === 'message' ? 'border-emerald-400/20' : 'border-purple-400/20'}
+                                    shadow-[0_0_60px_-15px_${uploadMode === 'message' ? 'rgba(16,185,129,0.4)' : 'rgba(124,58,237,0.4)'}]
                                     group overflow-hidden
-                                    flex flex-col items-center justify-center
-                                    transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_0_80px_-10px_rgba(124,58,237,0.6)] hover:border-purple-400/40
-                                    cursor-pointer
-                                "
-                                onClick={() => {
-                                    console.log('Card clicked, session:', session);
-                                    if (session) {
-                                        navigate('/app');
-                                    } else {
-                                        document.getElementById('file-upload-hidden')?.click();
-                                    }
-                                }}
+                                    flex flex-col
+                                    transition-all duration-500
+                                `}
                             >
                                 {/* Internal Specular Highlight (The 45deg shine) */}
                                 <div
@@ -604,23 +667,157 @@ export default function HomePage() {
                                 {/* High-gloss Top Border Accent */}
                                 <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent opacity-70" />
 
-                                {/* Content */}
-                                <div className="relative z-10 flex flex-col items-center text-center p-8">
-                                    <UploadCloud
-                                        className="w-20 h-20 text-purple-400 mb-6 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-500"
-                                        strokeWidth={1.5}
-                                    />
+                                {/* MODE TOGGLE PILL */}
+                                {!session && (
+                                    <div className="relative z-20 flex justify-center pt-5">
+                                        <div className="inline-flex p-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10">
+                                            <button
+                                                onClick={() => setUploadMode('file')}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${uploadMode === 'file'
+                                                    ? 'bg-white/15 text-white shadow-[0_0_15px_rgba(168,85,247,0.4)]'
+                                                    : 'text-white/50 hover:text-white/70'
+                                                    }`}
+                                            >
+                                                <UploadCloud className="w-4 h-4" />
+                                                File Upload
+                                            </button>
+                                            <button
+                                                onClick={() => setUploadMode('message')}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${uploadMode === 'message'
+                                                    ? 'bg-white/15 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]'
+                                                    : 'text-white/50 hover:text-white/70'
+                                                    }`}
+                                            >
+                                                <MessageSquare className="w-4 h-4" />
+                                                BlindText
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
-                                    <h2 className="text-3xl font-bold text-white mb-2 tracking-tight group-hover:text-purple-100 transition-colors">
-                                        {session ? 'Go to Dashboard' : 'Drop to Encrypt'}
-                                    </h2>
+                                {/* Content - File Upload Mode */}
+                                {uploadMode === 'file' && (
+                                    <div
+                                        className="relative z-10 flex flex-col items-center justify-center text-center p-8 flex-1 cursor-pointer hover:scale-[1.02] transition-transform"
+                                        onClick={() => {
+                                            if (session) {
+                                                navigate('/app');
+                                            } else {
+                                                document.getElementById('file-upload-hidden')?.click();
+                                            }
+                                        }}
+                                    >
+                                        <UploadCloud
+                                            className="w-20 h-20 text-purple-400 mb-6 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)] group-hover:scale-110 transition-transform duration-500"
+                                            strokeWidth={1.5}
+                                        />
 
-                                    <p className="text-white/50 text-base font-medium">
-                                        {session ? 'Click to manage your files in the App' : (
-                                            <>Drag & Drop files here or <span className="text-purple-400 font-bold underline underline-offset-4 decoration-purple-400/30 hover:decoration-purple-400 hover:text-purple-300 transition-all">Browse</span></>
-                                        )}
-                                    </p>
-                                </div>
+                                        <h2 className="text-3xl font-bold text-white mb-2 tracking-tight group-hover:text-purple-100 transition-colors">
+                                            {session ? 'Go to Dashboard' : 'Drop to Encrypt'}
+                                        </h2>
+
+                                        <p className="text-white/50 text-base font-medium">
+                                            {session ? 'Click to manage your files in the App' : (
+                                                <>Drag & Drop files here or <span className="text-purple-400 font-bold underline underline-offset-4 decoration-purple-400/30 hover:decoration-purple-400 hover:text-purple-300 transition-all">Browse</span></>
+                                            )}
+                                        </p>
+                                    </div>
+                                )}
+
+                                {/* Content - BlindText Mode */}
+                                {uploadMode === 'message' && !blindTextLink && (
+                                    <div className="relative z-10 flex flex-col p-6 flex-1">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                                <Feather className="w-5 h-5 text-emerald-400" />
+                                            </div>
+                                            <div>
+                                                <h2 className="text-xl font-bold text-white">Type to Encrypt</h2>
+                                                <p className="text-white/40 text-sm">Password-protected secure message</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Message Textarea */}
+                                        <textarea
+                                            value={messageText}
+                                            onChange={(e) => setMessageText(e.target.value)}
+                                            placeholder="Write your secret message here..."
+                                            className="flex-1 w-full bg-transparent text-white placeholder:text-white/30 resize-none focus:outline-none text-lg leading-relaxed min-h-[120px]"
+                                        />
+
+                                        {/* Password + Submit */}
+                                        <div className="flex gap-3 mt-4">
+                                            <div className="relative flex-1">
+                                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-400" />
+                                                <input
+                                                    type="password"
+                                                    value={messagePassword}
+                                                    onChange={(e) => setMessagePassword(e.target.value)}
+                                                    placeholder="Set a password..."
+                                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-black/30 border border-emerald-500/30 text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/60"
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={handleMessageUpload}
+                                                disabled={!messageText.trim() || !messagePassword.trim() || isCreatingLink}
+                                                className="px-6 py-3 rounded-xl font-medium bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                            >
+                                                {isCreatingLink ? (
+                                                    <>
+                                                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                                        Creating...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        Create Link
+                                                        <ArrowRight className="w-4 h-4" />
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Content - BlindText Success */}
+                                {uploadMode === 'message' && blindTextLink && (
+                                    <div className="relative z-10 flex flex-col items-center justify-center p-8 flex-1 text-center">
+                                        <div className="w-16 h-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
+                                            <CheckCircle className="w-8 h-8 text-emerald-400" />
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-white mb-2">Secure Link Created!</h2>
+                                        <p className="text-white/50 mb-6">Share this link. The recipient will need the password.</p>
+
+                                        {/* Link Display */}
+                                        <div className="w-full max-w-md bg-black/40 rounded-xl p-4 border border-emerald-500/30 mb-4">
+                                            <p className="text-white/70 text-sm break-all font-mono">{blindTextLink}</p>
+                                        </div>
+
+                                        <div className="flex gap-3">
+                                            <button
+                                                onClick={copyBlindTextLink}
+                                                className="px-6 py-3 rounded-xl font-medium bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:opacity-90 transition-all flex items-center gap-2"
+                                            >
+                                                {linkCopied ? (
+                                                    <>
+                                                        <Check className="w-4 h-4" />
+                                                        Copied!
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Copy className="w-4 h-4" />
+                                                        Copy Link
+                                                    </>
+                                                )}
+                                            </button>
+                                            <button
+                                                onClick={resetBlindText}
+                                                className="px-6 py-3 rounded-xl font-medium bg-white/10 text-white hover:bg-white/20 transition-all"
+                                            >
+                                                New Message
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Hidden Input */}
                                 <input
