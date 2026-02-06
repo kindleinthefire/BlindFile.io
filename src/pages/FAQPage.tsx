@@ -41,6 +41,10 @@ const FAQ_CATEGORIES = [
             {
                 q: "Do you sell user data?",
                 a: "We have nothing to sell. Because we utilize Zero-Knowledge Architecture, we do not possess your files, passwords, or keys. We cannot sell what we cannot see."
+            },
+            {
+                q: "Is mobile downloading Zero-Knowledge?",
+                a: "Status: HYBRID. Mobile browsers lack the computational density and memory management required to decrypt massive files client-side without crashing. To bypass these hardware limits, we utilize a Server-Side Bridge Protocol for mobile devices.\n\nThe Process: The file is temporarily decrypted in a secure, isolated memory sandbox on our server, then immediately streamed to your device via standard HTTPS.\n\nThe Risk Profile: While the file is strictly encrypted in transit, for the brief duration of the download, it is theoretically visible to the server process.\n\nThe Guarantee: This memory sandbox is ephemeral. Once the stream closes, the decrypted data is wiped from RAM instantly. No logs, no copies. For absolute Zero-Knowledge assurance, we recommend using a Desktop terminal."
             }
         ]
     },
