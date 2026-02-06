@@ -20,7 +20,8 @@
         "noUnusedParameters": true,
         "noFallthroughCasesInSwitch": true,
         "types": [
-            "vite/client"
+            "vite/client",
+            "@cloudflare/workers-types"
         ],
         "paths": {
             "@/*": [
@@ -29,7 +30,8 @@
         }
     },
     "include": [
-        "src"
+        "src",
+        "functions"
     ],
     "exclude": [
         "src/worker"
