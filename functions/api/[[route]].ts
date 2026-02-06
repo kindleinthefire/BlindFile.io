@@ -3,12 +3,15 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { handle } from 'hono/cloudflare-pages';
+import { createClient } from '@supabase/supabase-js';
 
 // Types for Cloudflare bindings
 interface Env {
     BUCKET: R2Bucket;
     DB: D1Database;
     ENVIRONMENT: string;
+    SUPABASE_URL: string;
+    SUPABASE_ANON_KEY: string;
 }
 
 interface InitRequest {
@@ -98,10 +101,53 @@ app.post('/upload/init', async (c) => {
         return c.json({ error: 'fileName and fileSize are required' }, 400);
     }
 
-    // Validate file size (max 500GB)
-    const maxFileSize = 500 * 1024 * 1024 * 1024;
-    if (body.fileSize > maxFileSize) {
-        return c.json({ error: 'File size exceeds 500GB limit' }, 400);
+    // ============================================
+    // THE GATEKEEPER - TIERED PERMISSION SYSTEM
+    // ============================================
+    const LIMITS = {
+        guest: 1 * 1024 * 1024 * 1024,      // 1 GB
+        basic: 5 * 1024 * 1024 * 1024,      // 5 GB
+        pro: 500 * 1024 * 1024 * 1024,      // 500 GB
+    };
+
+    let tier = 'guest';
+
+    // Step A: Check Authentication
+    const authHeader = c.req.header('Authorization');
+    if (authHeader && env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
+        try {
+            const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+            const token = authHeader.replace('Bearer ', '');
+
+            const { data: { user }, error } = await supabase.auth.getUser(token);
+
+            if (user) {
+                // Step B: Query Profile for Subscription Tier
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('subscription_tier')
+                    .eq('id', user.id)
+                    .single();
+
+                // Allow upgrade to 'basic' if not found (default for auth users), or respect DB value
+                tier = profile?.subscription_tier || 'basic';
+            }
+        } catch (e) {
+            console.error('Gatekeeper Auth Check Failed:', e);
+            // Fallback to guest if auth fails
+        }
+    }
+
+    const limit = LIMITS[tier as keyof typeof LIMITS];
+
+    // Step C: Hard Enforcement
+    if (body.fileSize > limit) {
+        const formatSize = (bytes: number) => (bytes / (1024 * 1024 * 1024)) + 'GB';
+        return c.json({
+            error: `Limit Exceeded. You are on the ${tier.toUpperCase()} tier (Limit: ${formatSize(limit)}). Upgrade to send larger files.`,
+            isQuotaExceeded: true,
+            tier
+        }, 403);
     }
 
     try {

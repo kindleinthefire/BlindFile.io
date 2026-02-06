@@ -19,6 +19,7 @@ export default function HomePage() {
     const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [session, setSession] = useState<any>(null);
+    const [tier, setTier] = useState<string>('guest');
     const navigate = useNavigate();
 
     const MENU_ITEMS = [
@@ -29,14 +30,21 @@ export default function HomePage() {
     ];
 
     useEffect(() => {
+        const fetchTier = async (userId: string) => {
+            const { data } = await supabase.from('profiles').select('subscription_tier').eq('id', userId).single();
+            if (data?.subscription_tier) setTier(data.subscription_tier);
+            else setTier('basic'); // Auth user default
+        };
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
+            if (session?.user) fetchTier(session.user.id);
         });
 
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
+            if (session?.user) fetchTier(session.user.id);
+            else setTier('guest');
         });
 
         return () => subscription.unsubscribe();
@@ -47,15 +55,31 @@ export default function HomePage() {
 
     const handleFilesSelected = useCallback(
         async (selectedFiles: File[]) => {
+            const LIMITS: Record<string, number> = {
+                guest: 1 * 1024 * 1024 * 1024,
+                basic: 5 * 1024 * 1024 * 1024,
+                pro: 500 * 1024 * 1024 * 1024,
+            };
+            const limit = LIMITS[tier] || LIMITS['guest'];
+
             if (session) {
+                // If logged in, let generic app handle it or redirect. 
+                // Checks logic should ideally be here if we want "Fail Fast" before redirect, 
+                // but app page has the UI. Redirecting...
                 navigate('/app');
                 return;
             }
+
+            // GUEST CHECK
             for (const file of selectedFiles) {
+                if (file.size > limit) {
+                    alert(`Limit Exceeded. Guests are limited to 1GB. Sign in for 5GB or Go Pro for 500GB.`);
+                    return;
+                }
                 upload(file);
             }
         },
-        [upload, session, navigate]
+        [upload, session, navigate, tier]
     );
 
     // Simple Drag & Drop Logic for the Card

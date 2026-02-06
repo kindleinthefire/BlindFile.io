@@ -7,6 +7,7 @@ import { UploadStats } from '../components/UploadStats';
 import { useFileUploader } from '../hooks/useFileUploader';
 import { useUploadStore } from '../store/uploadStore';
 import { supabase } from '../lib/supabase';
+import { formatBytes } from '../lib/crypto';
 import { ProfileModal } from '../components/ProfileModal';
 
 import logo from '../assets/logo.png';
@@ -16,16 +17,22 @@ export default function LegacyAppPage() {
     const { getAllFiles, stats } = useUploadStore();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [session, setSession] = useState<any>(null);
+    const [tier, setTier] = useState<string>('basic'); // Assume basic for auth users initially
 
     useEffect(() => {
+        const fetchTier = async (userId: string) => {
+            const { data } = await supabase.from('profiles').select('subscription_tier').eq('id', userId).single();
+            if (data?.subscription_tier) setTier(data.subscription_tier);
+        };
+
         supabase.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
+            if (session?.user) fetchTier(session.user.id);
         });
 
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
             setSession(session);
+            if (session?.user) fetchTier(session.user.id);
         });
 
         return () => subscription.unsubscribe();
@@ -34,11 +41,22 @@ export default function LegacyAppPage() {
     const files = getAllFiles();
     const handleFilesSelected = useCallback(
         async (selectedFiles: File[]) => {
+            const LIMITS: Record<string, number> = {
+                basic: 5 * 1024 * 1024 * 1024,
+                pro: 500 * 1024 * 1024 * 1024,
+            };
+            // Fallback to basic if tier is somehow guest or undefined in this view
+            const limit = LIMITS[tier] || LIMITS['basic'];
+
             for (const file of selectedFiles) {
+                if (file.size > limit) {
+                    alert(`Limit Exceeded. You are on the ${tier.toUpperCase()} tier (Limit: ${formatBytes(limit)}). Upgrade to Pro for 500GB.`);
+                    return;
+                }
                 upload(file);
             }
         },
-        [upload]
+        [upload, tier]
     );
 
     return (

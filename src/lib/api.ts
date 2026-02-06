@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 const API_BASE = '/api';
 
 export interface InitUploadResponse {
@@ -54,12 +56,20 @@ class ApiClient {
         endpoint: string,
         options: RequestInit = {}
     ): Promise<T> {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            ...(options.headers as Record<string, string>),
+        };
+
+        if (session) {
+            headers['Authorization'] = `Bearer ${session.access_token}`;
+        }
+
         const response = await fetch(`${this.baseUrl}${endpoint}`, {
             ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
+            headers,
         });
 
         if (!response.ok) {
