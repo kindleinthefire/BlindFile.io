@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { ThreeBackground } from '../components/ThreeBackground';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Lock, Globe, Key, ShieldCheck, FileKey, Server } from 'lucide-react';
+import { ArrowLeft, Lock, Globe, Key, ShieldCheck, FileKey, Server, Play } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 const STEPS = [
@@ -96,6 +96,29 @@ export default function HowItWorksPage() {
                         From Local Key Gen to Global Edge Delivery
                     </motion.p>
                 </div>
+
+                {/* DEMO BUTTON */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="mb-16"
+                >
+                    <button
+                        onClick={() => window.open('https://youtube.com', '_blank')}
+                        className="group relative flex items-center gap-3 px-6 py-3 rounded-full bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 backdrop-blur-md shadow-[0_0_20px_rgba(59,130,246,0.15)] hover:shadow-[0_0_30px_rgba(59,130,246,0.25)]"
+                    >
+                        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/30">
+                            <Play className="w-4 h-4 text-white fill-white ml-0.5" />
+                        </div>
+                        <span className="font-medium text-blue-200 group-hover:text-white transition-colors tracking-wide text-sm">
+                            Watch a Demo
+                        </span>
+
+                        {/* Glow Effect */}
+                        <div className="absolute inset-0 rounded-full ring-2 ring-blue-400/20 group-hover:ring-blue-400/40 transition-all animate-pulse" />
+                    </button>
+                </motion.div>
 
                 {/* STEPS GRID */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
