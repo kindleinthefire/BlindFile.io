@@ -1,4 +1,4 @@
-const SW_VERSION = 'v7-bulletproof';
+const SW_VERSION = 'v8-ios-cors-fix';
 const streamMap = new Map();
 
 // --- CONFIGURATION ---
@@ -124,7 +124,9 @@ self.addEventListener('fetch', (event) => {
                 const headers = new Headers();
                 headers.set('Content-Type', 'application/octet-stream');
                 headers.set('Content-Disposition', `attachment; filename="${state.filename.replace(/"/g, '\\"')}"`);
-                if (state.size) headers.set('Content-Length', state.size.toString());
+                // NOTE: Intentionally NOT setting Content-Length
+                // The encrypted size != decrypted size, and mismatched Content-Length
+                // causes Safari to wait forever for more bytes
 
                 return new Response(stream, { headers });
             } catch (err) {

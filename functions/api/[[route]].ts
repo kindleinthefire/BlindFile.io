@@ -79,7 +79,7 @@ app.use(
     '/*',
     cors({
         origin: '*',
-        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
         allowHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
         exposeHeaders: ['ETag'],
         maxAge: 86400,
