@@ -23,6 +23,7 @@ export default function HomePage() {
     const navigate = useNavigate();
 
     const MENU_ITEMS = [
+        { label: 'How It Works', path: '/how-it-works' },
         { label: 'Pricing', path: '/pricing' },
         { label: 'FAQ', path: '/faq' },
         { label: 'Privacy Policy', path: '/privacy' },
