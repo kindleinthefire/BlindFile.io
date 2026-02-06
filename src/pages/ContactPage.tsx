@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { ThreeBackground } from '../components/ThreeBackground';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, LifeBuoy, ShieldAlert, Rocket, ExternalLink, Mail, MapPin } from 'lucide-react';
+import { ArrowLeft, LifeBuoy, ShieldAlert, Rocket, Mail, MapPin } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 export default function ContactPage() {
