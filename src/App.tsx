@@ -6,6 +6,7 @@ import DownloadPage from './pages/DownloadPage';
 import AuthPage from './pages/AuthPage';
 import PricingPage from './pages/PricingPage';
 import FAQPage from './pages/FAQPage';
+import PrivacyPage from './pages/PrivacyPage';
 
 function App() {
     return (
@@ -17,6 +18,7 @@ function App() {
                     <Route path="/auth" element={<AuthPage />} />
                     <Route path="/pricing" element={<PricingPage />} />
                     <Route path="/faq" element={<FAQPage />} />
+                    <Route path="/privacy" element={<PrivacyPage />} />
                     <Route path="/download/:id" element={<DownloadPage />} />
                 </Routes>
             </AnimatePresence>

@@ -24,6 +24,7 @@ export default function HomePage() {
     const MENU_ITEMS = [
         { label: 'Pricing', path: '/pricing' },
         { label: 'FAQ', path: '/faq' },
+        { label: 'Privacy Policy', path: '/privacy' },
         { label: 'Contact Us', path: '/contact' },
     ];
 
