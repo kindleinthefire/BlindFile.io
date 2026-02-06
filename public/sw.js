@@ -1,4 +1,4 @@
-const SW_VERSION = 'v6-ios-fix';
+const SW_VERSION = 'v7-bulletproof';
 const streamMap = new Map();
 
 // --- CONFIGURATION ---
@@ -39,88 +39,98 @@ self.addEventListener('fetch', (event) => {
         if (!state) return;
 
         event.respondWith((async () => {
-            const response = await fetch(state.remoteUrl);
-            if (!response.body) return new Response("Network Error", { status: 500 });
+            try {
+                const response = await fetch(state.remoteUrl);
+                if (!response.ok) {
+                    console.error("[SW] Remote fetch failed:", response.status, response.statusText);
+                    return new Response(`Remote fetch failed: ${response.status}`, { status: 502 });
+                }
+                if (!response.body) {
+                    console.error("[SW] No response body");
+                    return new Response("Network Error: No response body", { status: 500 });
+                }
 
-            const ENCRYPTED_CHUNK_SIZE = state.encryptedChunkSize;
+                const ENCRYPTED_CHUNK_SIZE = state.encryptedChunkSize;
 
-            // OPTIMIZED: Array-of-Chunks Buffering (No GC Thrashing)
-            // ... (rest of the logic uses local ENCRYPTED_CHUNK_SIZE)
-            let chunkQueue = [];
-            let totalQueueBytes = 0;
+                // OPTIMIZED: Array-of-Chunks Buffering (No GC Thrashing)
+                let chunkQueue = [];
+                let totalQueueBytes = 0;
 
-            const decryptionStream = new TransformStream({
-                async transform(chunk, controller) {
-                    chunkQueue.push(chunk);
-                    totalQueueBytes += chunk.byteLength;
+                const decryptionStream = new TransformStream({
+                    async transform(chunk, controller) {
+                        chunkQueue.push(chunk);
+                        totalQueueBytes += chunk.byteLength;
 
-                    // While we have enough data for at least one full encrypted chunk
-                    while (totalQueueBytes >= ENCRYPTED_CHUNK_SIZE) {
-                        // 1. Coalesce EXACTLY one chunk size from the queue
-                        const fullChunk = new Uint8Array(ENCRYPTED_CHUNK_SIZE);
-                        let offset = 0;
+                        // While we have enough data for at least one full encrypted chunk
+                        while (totalQueueBytes >= ENCRYPTED_CHUNK_SIZE) {
+                            // 1. Coalesce EXACTLY one chunk size from the queue
+                            const fullChunk = new Uint8Array(ENCRYPTED_CHUNK_SIZE);
+                            let offset = 0;
 
-                        while (offset < ENCRYPTED_CHUNK_SIZE) {
-                            const first = chunkQueue[0];
-                            const needed = ENCRYPTED_CHUNK_SIZE - offset;
+                            while (offset < ENCRYPTED_CHUNK_SIZE) {
+                                const first = chunkQueue[0];
+                                const needed = ENCRYPTED_CHUNK_SIZE - offset;
 
-                            if (first.byteLength <= needed) {
-                                // Take the whole piece
-                                fullChunk.set(first, offset);
-                                offset += first.byteLength;
-                                chunkQueue.shift(); // Remove used piece
-                            } else {
-                                // Take a slice of the piece
-                                fullChunk.set(first.subarray(0, needed), offset);
-                                offset += needed;
-                                // Replace the first piece with the remainder
-                                chunkQueue[0] = first.subarray(needed);
+                                if (first.byteLength <= needed) {
+                                    // Take the whole piece
+                                    fullChunk.set(first, offset);
+                                    offset += first.byteLength;
+                                    chunkQueue.shift(); // Remove used piece
+                                } else {
+                                    // Take a slice of the piece
+                                    fullChunk.set(first.subarray(0, needed), offset);
+                                    offset += needed;
+                                    // Replace the first piece with the remainder
+                                    chunkQueue[0] = first.subarray(needed);
+                                }
+                            }
+
+                            totalQueueBytes -= ENCRYPTED_CHUNK_SIZE;
+
+                            // 2. Decrypt immediately to free memory
+                            try {
+                                const decrypted = await decryptChunk(state.key, fullChunk.buffer);
+                                controller.enqueue(new Uint8Array(decrypted));
+                            } catch (err) {
+                                console.error("[SW] Decryption error", err);
+                                controller.error(err);
+                                return;
                             }
                         }
+                    },
+                    async flush(controller) {
+                        // Handle remainder (Final Chunk)
+                        if (totalQueueBytes > 0) {
+                            const finalBuffer = new Uint8Array(totalQueueBytes);
+                            let offset = 0;
+                            for (const piece of chunkQueue) {
+                                finalBuffer.set(piece, offset);
+                                offset += piece.byteLength;
+                            }
 
-                        totalQueueBytes -= ENCRYPTED_CHUNK_SIZE;
-
-                        // 2. Decrypt immediately to free memory
-                        try {
-                            // Transfer buffer to keep memory usage explicit
-                            const decrypted = await decryptChunk(state.key, fullChunk.buffer);
-                            controller.enqueue(new Uint8Array(decrypted));
-                        } catch (err) {
-                            console.error("Decryption error", err);
-                            controller.error(err);
-                            return;
+                            try {
+                                const decrypted = await decryptChunk(state.key, finalBuffer.buffer);
+                                controller.enqueue(new Uint8Array(decrypted));
+                            } catch (err) {
+                                console.error("[SW] Final decryption error", err);
+                                controller.error(err);
+                            }
                         }
                     }
-                },
-                async flush(controller) {
-                    // Handle remainder (Final Chunk)
-                    if (totalQueueBytes > 0) {
-                        const finalBuffer = new Uint8Array(totalQueueBytes);
-                        let offset = 0;
-                        for (const piece of chunkQueue) {
-                            finalBuffer.set(piece, offset);
-                            offset += piece.byteLength;
-                        }
+                });
 
-                        try {
-                            const decrypted = await decryptChunk(state.key, finalBuffer.buffer);
-                            controller.enqueue(new Uint8Array(decrypted));
-                        } catch (err) {
-                            console.error("Final decryption error", err);
-                            controller.error(err);
-                        }
-                    }
-                }
-            });
+                const stream = response.body.pipeThrough(decryptionStream);
 
-            const stream = response.body.pipeThrough(decryptionStream);
+                const headers = new Headers();
+                headers.set('Content-Type', 'application/octet-stream');
+                headers.set('Content-Disposition', `attachment; filename="${state.filename.replace(/"/g, '\\"')}"`);
+                if (state.size) headers.set('Content-Length', state.size.toString());
 
-            const headers = new Headers();
-            headers.set('Content-Type', 'application/octet-stream');
-            headers.set('Content-Disposition', `attachment; filename="${state.filename.replace(/"/g, '\\"')}"`);
-            if (state.size) headers.set('Content-Length', state.size.toString());
-
-            return new Response(stream, { headers });
+                return new Response(stream, { headers });
+            } catch (err) {
+                console.error("[SW] Download handler error:", err);
+                return new Response("Download failed: " + (err.message || err), { status: 500 });
+            }
         })());
     }
 });

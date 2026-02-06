@@ -21,32 +21,51 @@ export class DownloadStreamManager {
         // 1. Prepare Metadata
         const virtualFileName = this.fileInfo.fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
         const virtualUrl = `/stream-download/${encodeURIComponent(virtualFileName)}`;
-        const remoteUrl = api.getDownloadUrl(this.id);
+        const apiUrl = api.getDownloadUrl(this.id);
 
-        // Mobile Defaults: Hardcode fallback chunkSize to 1MB (not 10MB) on mobile
+        // Mobile detection
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const defaultChunkSize = isMobile ? 1048576 : 10485760;
 
-        // Use the chunkSize from server metadata, or fallback
-        const chunkSize = this.fileInfo.chunkSize || this.fileInfo.partSize || defaultChunkSize;
+        // 2. Redirect Bypass: Resolve final R2 URL via HEAD request
+        // This prevents SW from dealing with redirects which can fail on mobile
+        let remoteUrl = apiUrl;
+        try {
+            console.log("[DownloadStream] Resolving final URL via HEAD...");
+            const headResponse = await fetch(apiUrl, { method: 'HEAD', redirect: 'follow' });
+            remoteUrl = headResponse.url;
+            console.log("[DownloadStream] Resolved URL:", remoteUrl);
+        } catch (headErr) {
+            console.warn("[DownloadStream] HEAD request failed, using API URL directly:", headErr);
+            // Fall back to the API URL if HEAD fails
+        }
 
-        // 2. The "Hail Mary" Handshake
+        // 3. Mobile-First Chunking: FORCE 1MB on mobile for stability
+        // On desktop, use server metadata or default to 10MB
+        const chunkSize = isMobile
+            ? 1048576
+            : (this.fileInfo.chunkSize || this.fileInfo.partSize || 10485760);
+
+        console.log(`[DownloadStream] Using chunkSize: ${chunkSize} (mobile: ${isMobile})`);
+
+        // 4. The "Hail Mary" Handshake
         // Race the "READY" response against a 2-second timeout.
         const handshake = new Promise<void>((resolve) => {
             const timeout = setTimeout(() => {
-                console.warn("SW Blind Navigation: Handshake timed out (2s). Proceeding anyway.");
+                console.warn("[DownloadStream] SW Silent, forcing navigation after 2s timeout.");
                 resolve(); // Proceed anyway
             }, 2000);
 
             channel.port1.onmessage = (event) => {
                 if (event.data === 'READY') {
+                    console.log("[DownloadStream] SW handshake received READY.");
                     clearTimeout(timeout);
                     resolve();
                 }
             };
         });
 
-        // 3. Register the download with the SW
+        // 5. Register the download with the SW
+        console.log("[DownloadStream] Sending REGISTER_DOWNLOAD to SW...");
         navigator.serviceWorker.controller.postMessage({
             type: 'REGISTER_DOWNLOAD',
             url: virtualUrl,
@@ -57,13 +76,13 @@ export class DownloadStreamManager {
             chunkSize: chunkSize
         }, [channel.port2]);
 
-        // 4. Wait for readiness (or timeout), then trigger
+        // 6. Wait for readiness (or timeout), then trigger
         try {
             await handshake;
-            // SW is either ready or we are forcing it
+            console.log("[DownloadStream] Navigating to download URL...");
             window.location.href = virtualUrl;
         } catch (err) {
-            console.error("Download Start Failed:", err);
+            console.error("[DownloadStream] Download Start Failed:", err);
             throw err;
         }
     }
