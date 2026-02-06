@@ -146,10 +146,11 @@ async function createZipWithPassword(
 
     // Add the file with obfuscated name
     await zipWriter.add(entryName, new BlobReader(file), {
-        onprogress: (current: number, total: number) => {
+        onprogress: (current: number, total: number): undefined => {
             if (onProgress) {
                 onProgress((current / total) * 50); // 0-50% for ZIP creation
             }
+            return undefined;
         }
     });
 
