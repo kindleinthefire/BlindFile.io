@@ -78,7 +78,9 @@ export default function AuthPage() {
                     ">
                         <div className="text-center mb-8">
                             <div className="flex justify-center mb-6">
-                                <img src={logo} alt="Blind File Logo" className="w-16 h-16 object-contain" />
+                                <Link to="/">
+                                    <img src={logo} alt="Blind File Logo" className="w-16 h-16 object-contain hover:opacity-80 transition-opacity" />
+                                </Link>
                             </div>
                             <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70 mb-2">
                                 {isLogin ? 'Welcome Back' : 'Create Account'}

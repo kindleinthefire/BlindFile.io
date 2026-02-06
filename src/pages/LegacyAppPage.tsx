@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Clock, User, CheckCircle } from 'lucide-react';
 import { DropZone } from '../components/DropZone';
@@ -88,7 +88,7 @@ export default function LegacyAppPage() {
             >
                 <div className="container mx-auto px-4 py-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                             <img
                                 src={logo}
                                 alt="Blind File Logo"
@@ -100,7 +100,7 @@ export default function LegacyAppPage() {
                                     Zero-Knowledge Transfer
                                 </p>
                             </div>
-                        </div>
+                        </Link>
 
                         <div className="flex items-center gap-4">
                             {session ? (
