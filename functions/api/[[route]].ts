@@ -116,7 +116,12 @@ app.post('/upload/init', async (c) => {
     const authHeader = c.req.header('Authorization');
     if (authHeader && env.SUPABASE_URL && env.SUPABASE_ANON_KEY) {
         try {
-            const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY);
+            // Pass the Authorization header to the client so RLS policies work!
+            const supabase = createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
+                global: {
+                    headers: { Authorization: authHeader },
+                },
+            });
             const token = authHeader.replace('Bearer ', '');
 
             const { data: { user }, error } = await supabase.auth.getUser(token);
