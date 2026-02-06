@@ -184,5 +184,5 @@ export function parseBlindTextHash(hash: string): {
  * Generate BlindText download URL
  */
 export function generateBlindTextUrl(uploadId: string, salt: string): string {
-    return `https://www.blindfile.io/d/${uploadId}#salt=${salt}&type=message`;
+    return `${window.location.origin}/download/${uploadId}#salt=${salt}&type=message`;
 }
