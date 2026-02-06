@@ -53,9 +53,7 @@ export default function LegacyAppPage() {
         return () => subscription.unsubscribe();
     }, [navigate]);
 
-    if (loading) {
-        return <div className="min-h-screen bg-black" />; // Stealth loading
-    }
+
 
     const files = getAllFiles();
     const handleFilesSelected = useCallback(
@@ -77,6 +75,10 @@ export default function LegacyAppPage() {
         },
         [upload, tier]
     );
+
+    if (loading) {
+        return <div className="min-h-screen bg-black" />; // Stealth loading
+    }
 
     return (
         <div className="min-h-screen flex flex-col stealth-bg grid-pattern">
