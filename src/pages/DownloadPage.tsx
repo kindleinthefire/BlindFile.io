@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { CountdownTimer } from '../components/CountdownTimer';
 import { api, DownloadInfo } from '../lib/api';
-import { importKey, formatBytes } from '../lib/crypto';
+import { importKey, formatBytes, decryptMetadata } from '../lib/crypto';
 import { FileDownloader } from '../lib/fileDownloader';
 import logo from '../assets/logo.png';
 
@@ -94,6 +94,27 @@ export default function DownloadPage() {
 
         fetchInfo();
     }, [id]);
+
+    // Decrypt Metadata if available
+    useEffect(() => {
+        const decryptInfo = async () => {
+            if (fileInfo && fileInfo.encryptedMetadata && encryptionKey && fileInfo.fileName.endsWith('.bin')) {
+                try {
+                    const key = await importKey(encryptionKey);
+                    const metadata = await decryptMetadata(fileInfo.encryptedMetadata, key);
+                    setFileInfo(prev => prev ? {
+                        ...prev,
+                        fileName: metadata.name,
+                        contentType: metadata.type,
+                        encryptedMetadata: undefined // Prevent loop
+                    } : null);
+                } catch (e) {
+                    console.error("Failed to decrypt metadata", e);
+                }
+            }
+        };
+        decryptInfo();
+    }, [fileInfo?.encryptedMetadata, encryptionKey]);
 
     const handleDownload = async () => {
         if (!id || !fileInfo || !encryptionKey) return;

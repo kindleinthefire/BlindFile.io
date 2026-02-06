@@ -40,6 +40,7 @@ export interface DownloadInfo {
     expiresAt: string;
     createdAt: string;
     partSize: number;
+    encryptedMetadata?: string;
 }
 
 class ApiClient {
@@ -75,11 +76,12 @@ class ApiClient {
     async initUpload(
         fileName: string,
         fileSize: number,
-        contentType?: string
+        contentType?: string,
+        encryptedMetadata?: string
     ): Promise<InitUploadResponse> {
         return this.request<InitUploadResponse>('/upload/init', {
             method: 'POST',
-            body: JSON.stringify({ fileName, fileSize, contentType }),
+            body: JSON.stringify({ fileName, fileSize, contentType, encryptedMetadata }),
         });
     }
 

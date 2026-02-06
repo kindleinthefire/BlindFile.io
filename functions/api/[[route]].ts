@@ -15,6 +15,7 @@ interface InitRequest {
     fileName: string;
     fileSize: number;
     contentType?: string;
+    encryptedMetadata?: string;
 }
 
 interface SignRequest {
@@ -110,7 +111,8 @@ app.post('/upload/init', async (c) => {
 
         // Generate unique identifiers
         const id = generateUUID();
-        const objectKey = `uploads/${id}/${body.fileName}`;
+        const storedFileName = `${id}.bin`; // "Total Blindness": Filename is now randomized
+        const objectKey = `uploads/${id}/${storedFileName}`;
 
         // Create multipart upload in R2
         const multipartUpload = await env.BUCKET.createMultipartUpload(objectKey, {
@@ -120,6 +122,7 @@ app.post('/upload/init', async (c) => {
             customMetadata: {
                 originalName: body.fileName,
                 uploadId: id,
+                encryptedMetadata: body.encryptedMetadata || '',
             },
         });
 
@@ -133,7 +136,7 @@ app.post('/upload/init', async (c) => {
             .bind(
                 id,
                 multipartUpload.uploadId,
-                body.fileName,
+                storedFileName,
                 body.fileSize,
                 partSize,
                 totalParts,
@@ -462,6 +465,17 @@ app.get('/download/:id', async (c) => {
             return c.json({ error: 'File not found or expired' }, 404);
         }
 
+        let encryptedMetadata: string | undefined;
+        try {
+            const objectKey = `uploads/${upload.id}/${upload.file_name}`;
+            const head = await env.BUCKET.head(objectKey);
+            if (head?.customMetadata?.encryptedMetadata) {
+                encryptedMetadata = head.customMetadata.encryptedMetadata;
+            }
+        } catch (e) {
+            console.warn('Failed to fetch metadata from R2', e);
+        }
+
         return c.json({
             id: upload.id,
             fileName: upload.file_name,
@@ -470,6 +484,7 @@ app.get('/download/:id', async (c) => {
             expiresAt: upload.expires_at,
             createdAt: upload.created_at,
             partSize: upload.part_size,
+            encryptedMetadata,
         });
     } catch (error) {
         console.error('Download info error:', error);

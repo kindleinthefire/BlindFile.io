@@ -103,6 +103,28 @@ export async function decryptChunk(
 }
 
 /**
+ * Encrypt metadata (JSON) into a Base64URL string using the same key
+ */
+export async function encryptMetadata(metadata: object, key: CryptoKey): Promise<string> {
+    const json = JSON.stringify(metadata);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(json);
+    const encrypted = await encryptChunk(key, data.buffer as ArrayBuffer);
+    return arrayBufferToBase64Url(encrypted);
+}
+
+/**
+ * Decrypt metadata string back into an object
+ */
+export async function decryptMetadata(encryptedMetadata: string, key: CryptoKey): Promise<any> {
+    const buffer = base64UrlToArrayBuffer(encryptedMetadata);
+    const decrypted = await decryptChunk(key, buffer);
+    const decoder = new TextDecoder();
+    const json = decoder.decode(decrypted);
+    return JSON.parse(json);
+}
+
+/**
  * Create an encryption transform stream
  * Encrypts data as it passes through - never loads full file into memory
  */

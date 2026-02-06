@@ -1,6 +1,6 @@
 
 import { api } from '../lib/api';
-import { generateEncryptionKey, exportKey, encryptChunk } from '../lib/crypto';
+import { generateEncryptionKey, exportKey, encryptChunk, encryptMetadata } from '../lib/crypto';
 import { UploadFile } from '../store/uploadStore';
 import { supabase } from '../lib/supabase';
 import { incrementUserStats } from '../lib/userStats';
@@ -50,8 +50,12 @@ export async function uploadFile(
         const keyString = await exportKey(encryptionKey);
         updateFile(fileId, { encryptionKey: keyString });
 
+        // Step 1.5: Encrypt Metadata (Filename Obfuscation)
+        const encryptedMetadata = await encryptMetadata({ name: file.name, type: file.type }, encryptionKey);
+
         // Step 2: Initialize upload to get partSize
-        const initResponse = await api.initUpload(file.name, file.size, file.type);
+        // We send "encrypted-payload.bin" to server. Server ignores it for storage but uses it for validation if needed.
+        const initResponse = await api.initUpload("encrypted-payload.bin", file.size, "application/octet-stream", encryptedMetadata);
         updateFile(fileId, {
             partSize: initResponse.partSize,
             totalParts: initResponse.totalParts,
