@@ -67,4 +67,9 @@ export class DownloadStreamManager {
             throw err;
         }
     }
+    cancel() {
+        // Service Worker downloads rely on the browser's download manager.
+        // We can't easily cancel the stream once started from here, but we can stop listening.
+        console.warn("Canceling Service Worker download stream is not fully supported via API.");
+    }
 }

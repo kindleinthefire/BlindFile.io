@@ -189,13 +189,9 @@ export class FileDownloader {
     private async downloadViaServiceWorker() {
         console.log('Falling back to Service Worker Stream');
         this.streamManager = new DownloadStreamManager(
+            this.fileInfo.id,
             this.fileInfo,
-            this.key,
-            {
-                onProgress: this.onProgress,
-                onComplete: this.onComplete,
-                onError: this.onError
-            }
+            this.key
         );
         await this.streamManager.start();
     }
