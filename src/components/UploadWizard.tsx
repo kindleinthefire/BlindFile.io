@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Smartphone, Monitor, AlertCircle, Apple } from 'lucide-react';
+import { Monitor, AlertCircle, Apple } from 'lucide-react';
 
 interface UploadWizardProps {
     onComplete: (file: File, chunkSize: number, mobileZipMode?: boolean) => void;
@@ -8,7 +8,7 @@ interface UploadWizardProps {
 
 export function UploadWizard({ onComplete }: UploadWizardProps) {
     const [step, setStep] = useState<'device' | 'file'>('device');
-    const [deviceType, setDeviceType] = useState<'mobile' | 'desktop' | 'mobileZip' | null>(null);
+    const [deviceType, setDeviceType] = useState<'desktop' | 'mobileZip' | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const DEVICE_CONFIG = {
@@ -17,28 +17,18 @@ export function UploadWizard({ onComplete }: UploadWizardProps) {
             icon: Monitor,
             maxSize: 500 * 1024 * 1024 * 1024, // 500GB
             chunkSize: 10 * 1024 * 1024, // 10MB
-            desc: "AES-256 encryption. Optimal for speed.",
-            color: "purple"
-        },
-        mobile: {
-            label: "Mobile (Advanced)",
-            icon: Smartphone,
-            maxSize: 50 * 1024 * 1024 * 1024, // 50GB
-            chunkSize: 5 * 1024 * 1024, // 5MB (R2 Minimum)
-            desc: "AES-256 with Service Worker decryption.",
-            color: "purple"
+            desc: "AES-256 zero-knowledge encryption. Max 500GB."
         },
         mobileZip: {
-            label: "iOS / Android (Recommended)",
+            label: "iOS / Android",
             icon: Apple,
-            maxSize: 10 * 1024 * 1024 * 1024, // 10GB for ZIP
+            maxSize: 50 * 1024 * 1024 * 1024, // 50GB for mobile downloads
             chunkSize: 5 * 1024 * 1024,
-            desc: "Password-protected ZIP. Opens natively in iOS Files.",
-            color: "green"
+            desc: "Password-protected ZIP. Opens natively. Max 50GB."
         }
     };
 
-    const handleDeviceSelect = (type: 'mobile' | 'desktop' | 'mobileZip') => {
+    const handleDeviceSelect = (type: 'desktop' | 'mobileZip') => {
         setDeviceType(type);
         setStep('file');
         setError(null);
@@ -60,7 +50,7 @@ export function UploadWizard({ onComplete }: UploadWizardProps) {
     };
 
     return (
-        <div className="w-full max-w-3xl mx-auto p-6">
+        <div className="w-full max-w-2xl mx-auto p-6">
             <AnimatePresence mode="wait">
                 {step === 'device' && (
                     <motion.div
@@ -72,25 +62,10 @@ export function UploadWizard({ onComplete }: UploadWizardProps) {
                     >
                         <div className="text-center mb-8">
                             <h2 className="text-2xl font-bold text-white mb-2">Recipient Device?</h2>
-                            <p className="text-white/60">We optimize the encryption based on where it will be opened.</p>
+                            <p className="text-white/60">Choose based on where the file will be downloaded.</p>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {/* Mobile ZIP First - Recommended */}
-                            <button
-                                onClick={() => handleDeviceSelect('mobileZip')}
-                                className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-green-500/5 border-2 border-green-500/30 hover:border-green-500/60 transition-all group text-left relative"
-                            >
-                                <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
-                                    Recommended
-                                </div>
-                                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-4 text-green-400 group-hover:scale-110 transition-transform">
-                                    <Apple className="w-6 h-6" />
-                                </div>
-                                <h3 className="text-lg font-bold text-white mb-1">{DEVICE_CONFIG.mobileZip.label}</h3>
-                                <p className="text-sm text-white/50">{DEVICE_CONFIG.mobileZip.desc}</p>
-                            </button>
-
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Desktop */}
                             <button
                                 onClick={() => handleDeviceSelect('desktop')}
@@ -103,16 +78,16 @@ export function UploadWizard({ onComplete }: UploadWizardProps) {
                                 <p className="text-sm text-white/50">{DEVICE_CONFIG.desktop.desc}</p>
                             </button>
 
-                            {/* Mobile Advanced */}
+                            {/* iOS/Android */}
                             <button
-                                onClick={() => handleDeviceSelect('mobile')}
-                                className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-purple-500/50 transition-all group text-left"
+                                onClick={() => handleDeviceSelect('mobileZip')}
+                                className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-green-500/5 border-2 border-green-500/30 hover:border-green-500/60 transition-all group text-left relative"
                             >
-                                <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform">
-                                    <Smartphone className="w-6 h-6" />
+                                <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-4 text-green-400 group-hover:scale-110 transition-transform">
+                                    <Apple className="w-6 h-6" />
                                 </div>
-                                <h3 className="text-lg font-bold text-white mb-1">{DEVICE_CONFIG.mobile.label}</h3>
-                                <p className="text-sm text-white/50">{DEVICE_CONFIG.mobile.desc}</p>
+                                <h3 className="text-lg font-bold text-white mb-1">{DEVICE_CONFIG.mobileZip.label}</h3>
+                                <p className="text-sm text-white/50">{DEVICE_CONFIG.mobileZip.desc}</p>
                             </button>
                         </div>
                     </motion.div>
@@ -153,7 +128,7 @@ export function UploadWizard({ onComplete }: UploadWizardProps) {
                                         ? 'bg-green-500/10 text-green-400'
                                         : 'bg-white/5 text-white/40 group-hover:text-purple-400'
                                     }`}>
-                                    {deviceType === 'mobileZip' ? <Apple className="w-8 h-8" /> : <Smartphone className="w-8 h-8" />}
+                                    {deviceType === 'mobileZip' ? <Apple className="w-8 h-8" /> : <Monitor className="w-8 h-8" />}
                                 </div>
                                 <p className="text-lg font-medium text-white mb-2">Click or Drop File</p>
                                 <p className="text-sm text-white/40">Max {DEVICE_CONFIG[deviceType].maxSize / (1024 * 1024 * 1024)}GB</p>
