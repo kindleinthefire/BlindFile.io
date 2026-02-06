@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Clock, User, CheckCircle, Menu, X } from 'lucide-react';
@@ -22,6 +22,7 @@ export default function LegacyAppPage() {
     const [tier, setTier] = useState<string>('basic');
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
+    const bottomRef = useRef<HTMLDivElement>(null);
 
     const MENU_ITEMS = [
         { label: 'How It Works', path: '/how-it-works' },
@@ -30,6 +31,16 @@ export default function LegacyAppPage() {
         { label: 'Privacy Policy', path: '/privacy' },
         { label: 'Contact Us', path: '/contact' },
     ];
+
+    const files = getAllFiles();
+
+    // Auto-scroll to bottom when a file status changes to 'completed'
+    useEffect(() => {
+        const hasCompletedFile = files.some(f => f.status === 'completed');
+        if (hasCompletedFile) {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [files]);
 
     useEffect(() => {
         const fetchTier = async (userId: string) => {
@@ -64,7 +75,7 @@ export default function LegacyAppPage() {
 
 
 
-    const files = getAllFiles();
+
     const handleFilesSelected = useCallback(
         async (selectedFiles: File[]) => {
             const LIMITS: Record<string, number> = {
@@ -298,6 +309,9 @@ export default function LegacyAppPage() {
                 <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-deep-purple/5 rounded-full blur-3xl" />
                 <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-success/5 rounded-full blur-3xl" />
             </div>
+
+            {/* Scroll Anchor */}
+            <div ref={bottomRef} className="pb-8" />
         </div>
     );
 }
