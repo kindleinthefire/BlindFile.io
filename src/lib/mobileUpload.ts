@@ -105,7 +105,7 @@ export async function uploadMobileCompatible(
 
         // 8. Generate smart download URL with full domain
         const encodedFilename = btoa(file.name);
-        const downloadUrl = `https://www.blindfile.io/d/${initResponse.id}#${password}|${encodedFilename}`;
+        const downloadUrl = `${window.location.origin}/download/${initResponse.id}#${password}|${encodedFilename}`;
 
         if (callbacks?.onComplete) {
             callbacks.onComplete(downloadUrl);
