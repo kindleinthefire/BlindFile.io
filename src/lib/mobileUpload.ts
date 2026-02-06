@@ -45,6 +45,7 @@ interface MobileUploadCallbacks {
     onProgress?: (percent: number) => void;
     onComplete?: (downloadUrl: string) => void;
     onError?: (error: Error) => void;
+    password?: string; // User-defined password (optional)
 }
 
 interface MobileUploadResult {
@@ -69,8 +70,8 @@ export async function uploadMobileCompatible(
     callbacks?: MobileUploadCallbacks
 ): Promise<MobileUploadResult | null> {
     try {
-        // 1. Generate password
-        const password = generateZipPassword();
+        // 1. Use user password or generate one
+        const password = callbacks?.password || generateZipPassword();
 
         // 2. Obfuscate the filename inside the ZIP
         const obfuscatedName = obfuscateFilename(file.name);
@@ -102,9 +103,9 @@ export async function uploadMobileCompatible(
         // 7. Complete the upload
         await api.completeUpload(initResponse.id, uploadResponse.parts);
 
-        // 8. Generate smart download URL
+        // 8. Generate smart download URL with full domain
         const encodedFilename = btoa(file.name);
-        const downloadUrl = `/d/${initResponse.id}#${password}|${encodedFilename}`;
+        const downloadUrl = `https://www.blindfile.io/d/${initResponse.id}#${password}|${encodedFilename}`;
 
         if (callbacks?.onComplete) {
             callbacks.onComplete(downloadUrl);

@@ -75,7 +75,7 @@ export default function LegacyAppPage() {
     }, [navigate]);
 
     const handleFilesSelected = useCallback(
-        async (selectedFiles: File[], chunkSize?: number, mobileZipMode?: boolean) => {
+        async (selectedFiles: File[], chunkSize?: number, mobileZipMode?: boolean, password?: string) => {
             const LIMITS: Record<string, number> = {
                 basic: 5 * 1024 * 1024 * 1024,
                 pro: 500 * 1024 * 1024 * 1024,
@@ -98,6 +98,7 @@ export default function LegacyAppPage() {
                     updateFile(localId, { status: 'encrypting' });
 
                     const result = await uploadMobileCompatible(file, {
+                        password, // User-defined password
                         onProgress: (percent) => {
                             updateFile(localId, {
                                 encryptionProgress: percent,
@@ -305,7 +306,7 @@ export default function LegacyAppPage() {
                     )}
 
                     {/* Upload Wizard (Replacing standard DropZone) */}
-                    <UploadWizard onComplete={(file, chunkSize, mobileZipMode) => handleFilesSelected([file], chunkSize, mobileZipMode)} />
+                    <UploadWizard onComplete={(file, chunkSize, mobileZipMode, password) => handleFilesSelected([file], chunkSize, mobileZipMode, password)} />
 
                     {/* Upload list */}
                     <AnimatePresence>
