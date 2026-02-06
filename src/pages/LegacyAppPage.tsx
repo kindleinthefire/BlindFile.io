@@ -1,4 +1,5 @@
 import { useCallback, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Zap, Clock, User, CheckCircle } from 'lucide-react';
 import { DropZone } from '../components/DropZone';
@@ -17,7 +18,9 @@ export default function LegacyAppPage() {
     const { getAllFiles, stats } = useUploadStore();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [session, setSession] = useState<any>(null);
-    const [tier, setTier] = useState<string>('basic'); // Assume basic for auth users initially
+    const [tier, setTier] = useState<string>('basic');
+    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchTier = async (userId: string) => {
@@ -25,18 +28,34 @@ export default function LegacyAppPage() {
             if (data?.subscription_tier) setTier(data.subscription_tier);
         };
 
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        const checkAuth = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                navigate('/');
+                return;
+            }
             setSession(session);
-            if (session?.user) fetchTier(session.user.id);
-        });
+            if (session.user) await fetchTier(session.user.id);
+            setLoading(false);
+        };
+
+        checkAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session) {
+                navigate('/');
+                return;
+            }
             setSession(session);
-            if (session?.user) fetchTier(session.user.id);
+            if (session.user) fetchTier(session.user.id);
         });
 
         return () => subscription.unsubscribe();
-    }, []);
+    }, [navigate]);
+
+    if (loading) {
+        return <div className="min-h-screen bg-black" />; // Stealth loading
+    }
 
     const files = getAllFiles();
     const handleFilesSelected = useCallback(
