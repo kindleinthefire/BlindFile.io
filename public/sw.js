@@ -1,132 +1,123 @@
-const SW_VERSION = 'v1';
+const SW_VERSION = 'v4-antigravity-final';
+const streamMap = new Map();
 
-// Map to store stream controllers keyed by file ID/URL
-const streamControllers = new Map();
+// --- CONFIGURATION ---
+// This must match the chunk size used during ENCRYPTION.
+// Standard browser file.stream() uses 64KB chunks.
+// BlindFile uses 10MB chunks (10 * 1024 * 1024)
+const PLAIN_CHUNK_SIZE = 10485760;
+const IV_LENGTH = 12;
+const TAG_LENGTH = 16; // AES-GCM tag is always 16 bytes
 
-self.addEventListener('install', (event) => {
-    self.skipWaiting();
-});
+// The total size of a chunk as it sits on the server (IV + Data + Tag)
+const ENCRYPTED_CHUNK_SIZE = PLAIN_CHUNK_SIZE + IV_LENGTH + TAG_LENGTH;
 
-self.addEventListener('activate', (event) => {
-    event.waitUntil(self.clients.claim());
-});
+self.addEventListener('install', (event) => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
 self.addEventListener('message', (event) => {
     const data = event.data;
     if (!data || !data.type) return;
 
-    // 1. Setup Stream
     if (data.type === 'REGISTER_DOWNLOAD') {
-        const { url, filename, size } = data;
+        const { url, filename, size, remoteUrl, key } = data;
 
-        // Store client to send PULL requests back
-        const client = event.source;
-        // Prefer the dedicated channel port if provided
-        const port = event.ports[0];
-
-        streamControllers.set(url, {
+        // Store the metadata and the CryptoKey
+        streamMap.set(url, {
             filename,
             size,
-            controller: null,
-            client,
-            port,
-            isClosed: false
+            remoteUrl,
+            key,
         });
 
-        if (port) port.postMessage('OK');
-    }
-
-    // 2. Enqueue Chunk
-    if (data.type === 'ENQUEUE_CHUNK') {
-        const { url, chunk } = data;
-        const state = streamControllers.get(url);
-
-        if (state && state.controller && !state.isClosed) {
-            try {
-                // If chunk is null/empty, interpret as close? No, explicit CLOSE_STREAM used.
-                state.controller.enqueue(chunk);
-            } catch (err) {
-                console.error('SW: Enqueue failed', err);
-            }
-        }
-    }
-
-    // 3. Close Stream
-    if (data.type === 'CLOSE_STREAM') {
-        const { url } = data;
-        const state = streamControllers.get(url);
-        if (state && state.controller && !state.isClosed) {
-            try {
-                state.controller.close();
-                state.isClosed = true;
-            } catch (e) { }
-            // Don't delete immediately, let the response finish? 
-            // Actually close() is sufficient.
-            streamControllers.delete(url);
-        }
-    }
-
-    // 4. Abort Stream
-    if (data.type === 'ABORT_STREAM') {
-        const { url, reason } = data;
-        const state = streamControllers.get(url);
-        if (state && state.controller && !state.isClosed) {
-            try {
-                state.controller.error(new Error(reason));
-                state.isClosed = true;
-            } catch (e) { }
-            streamControllers.delete(url);
-        }
+        // Signal to the main thread that we are ready to intercept
+        if (event.ports[0]) event.ports[0].postMessage('READY');
     }
 });
 
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
-    // Intercept download requests
+    // Intercept our virtual download URL
     if (url.pathname.startsWith('/stream-download/')) {
-        const state = streamControllers.get(url.pathname);
+        const state = streamMap.get(url.pathname);
+        if (!state) return;
 
-        if (state) {
-            const stream = new ReadableStream({
-                start(controller) {
-                    state.controller = controller;
-                    // Signal main thread to start/send first chunk
-                    if (state.port) {
-                        state.port.postMessage({ type: 'PULL', url: url.pathname });
-                    } else if (state.client) {
-                        state.client.postMessage({ type: 'PULL', url: url.pathname });
-                    }
-                },
-                pull(controller) {
-                    // Backpressure: This is called when the queue is low
-                    if (!state.isClosed) {
-                        if (state.port) {
-                            state.port.postMessage({ type: 'PULL', url: url.pathname });
-                        } else if (state.client) {
-                            state.client.postMessage({ type: 'PULL', url: url.pathname });
+        event.respondWith((async () => {
+            // 1. Fetch the encrypted file DIRECTLY in the Worker
+            // This keeps the 2GB blob out of the UI thread's memory.
+            const response = await fetch(state.remoteUrl);
+            if (!response.body) return new Response("Network Error", { status: 500 });
+
+            // 2. The Re-Chunking Stream
+            // We must buffer incoming bytes until we have a complete chunk 
+            // so that AES-GCM auth tags verify correctly.
+            let buffer = new Uint8Array(0);
+
+            const decryptionStream = new TransformStream({
+                async transform(chunk, controller) {
+                    // Append new network data to our buffer
+                    const newBuffer = new Uint8Array(buffer.length + chunk.length);
+                    newBuffer.set(buffer);
+                    newBuffer.set(chunk, buffer.length);
+                    buffer = newBuffer;
+
+                    // Process as many FULL chunks as we have in the buffer
+                    while (buffer.length >= ENCRYPTED_CHUNK_SIZE) {
+                        const chunkToDecrypt = buffer.slice(0, ENCRYPTED_CHUNK_SIZE);
+                        buffer = buffer.slice(ENCRYPTED_CHUNK_SIZE); // Keep the remainder
+
+                        try {
+                            const decrypted = await decryptChunk(state.key, chunkToDecrypt.buffer);
+                            controller.enqueue(new Uint8Array(decrypted));
+                        } catch (err) {
+                            console.error("Decryption failed on chunk", err);
+                            controller.error(err);
+                            return;
                         }
                     }
                 },
-                cancel() {
-                    if (state.port) {
-                        state.port.postMessage({ type: 'CANCEL', url: url.pathname });
-                    } else if (state.client) {
-                        state.client.postMessage({ type: 'CANCEL', url: url.pathname });
+                async flush(controller) {
+                    // Handle the final chunk (which is smaller than ENCRYPTED_CHUNK_SIZE)
+                    if (buffer.length > 0) {
+                        try {
+                            const decrypted = await decryptChunk(state.key, buffer.buffer);
+                            controller.enqueue(new Uint8Array(decrypted));
+                        } catch (err) {
+                            console.error("Final chunk decryption failed", err);
+                            controller.error(err);
+                        }
                     }
-                    streamControllers.delete(url.pathname);
                 }
             });
 
+            // 3. Pipe: Cloud -> Re-Chunker -> Browser
+            const stream = response.body.pipeThrough(decryptionStream);
+
+            // 4. Set Headers for iOS Compatibility
             const headers = new Headers();
             headers.set('Content-Type', 'application/octet-stream');
             headers.set('Content-Disposition', `attachment; filename="${state.filename.replace(/"/g, '\\"')}"`);
-            if (state.size) {
-                headers.set('Content-Length', state.size.toString());
-            }
+            if (state.size) headers.set('Content-Length', state.size.toString());
 
-            event.respondWith(new Response(stream, { headers }));
-            return;
-        }
+            return new Response(stream, { headers });
+        })());
     }
 });
+
+// --- HELPER: Decrypt Logic ---
+// Matches your exact "IV + Ciphertext + Tag" format
+async function decryptChunk(key, data) {
+    const dataArray = new Uint8Array(data);
+    const iv = dataArray.slice(0, IV_LENGTH);
+    const encrypted = dataArray.slice(IV_LENGTH);
+
+    return await self.crypto.subtle.decrypt(
+        {
+            name: 'AES-GCM',
+            iv: iv
+        },
+        key,
+        encrypted
+    );
+}

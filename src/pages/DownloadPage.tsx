@@ -119,74 +119,49 @@ export default function DownloadPage() {
     const handleDownload = async () => {
         if (!id || !fileInfo || !encryptionKey) return;
 
-        // --- MOBILE FLOW (Server-Side Stream) ---
+        // --- MOBILE FLOW (Service Worker Interceptor) ---
         if (downloadMode === 'mobile') {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/api/stream-download';
-            // form.target = '_blank'; // Optional: Open in new tab? Usually better to stay for downloads unless it replaces page
+            try {
+                if (!navigator.serviceWorker.controller) {
+                    throw new Error("Service Worker not active. Please refresh the page.");
+                }
 
-            const idInput = document.createElement('input');
-            idInput.type = 'hidden';
-            idInput.name = 'fileId';
-            idInput.value = id;
+                setStatus('decrypting');
+                setLoadingMessage("Initializing Service Worker stream...");
 
-            const keyInput = document.createElement('input');
-            keyInput.type = 'hidden';
-            keyInput.name = 'key';
-            keyInput.value = encryptionKey;
+                // 1. Get the Key Material
+                const key = await importKey(encryptionKey);
 
-            const filenameInput = document.createElement('input');
-            filenameInput.type = 'hidden';
-            filenameInput.name = 'originalName';
-            filenameInput.value = fileInfo.fileName; // Using fileInfo.fileName as originalName
+                // 2. Construct URLs
+                const virtualUrl = `/stream-download/${encodeURIComponent(fileInfo.fileName)}`;
+                const remoteUrl = `${window.location.origin}/api/download/${id}`;
 
-            const mimeInput = document.createElement('input');
-            mimeInput.type = 'hidden';
-            mimeInput.name = 'mimeType';
-            mimeInput.value = fileInfo.contentType || 'application/octet-stream';
+                // 3. Establish Channel
+                const channel = new MessageChannel();
 
-            form.appendChild(idInput);
-            form.appendChild(keyInput);
-            form.appendChild(filenameInput);
-            form.appendChild(mimeInput);
-            document.body.appendChild(form);
-            form.submit();
-            document.body.removeChild(form);
+                channel.port1.onmessage = (event) => {
+                    if (event.data === 'READY') {
+                        // 4. Trigger Native Download
+                        setStatus('complete'); // Optimistically update UI
+                        window.location.href = virtualUrl;
+                    }
+                };
 
-            // Show a "started" state briefly and rotate messages
-            setStatus('decrypting');
+                // 4. Register
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'REGISTER_DOWNLOAD',
+                    url: virtualUrl,
+                    filename: fileInfo.fileName,
+                    size: fileInfo.fileSize,
+                    remoteUrl: remoteUrl,
+                    key: key
+                }, [channel.port2]);
 
-            // ESTIMATION ALGORITHM:
-            // Since we cannot track the actual Progress of a native Form POST download in JS,
-            // we estimate the duration based on File Size and Network Speed.
-            // This ensures the spinner stays up for a realistic amount of time.
-
-            const size = fileInfo.fileSize;
-
-            // Attempt to get actual network speed, default to conservative 3G/4G (2MB/s)
-            // @ts-ignore - Navigator connection is experimental but supported in Chromium/Android
-            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
-            const speedMbps = connection?.downlink || 5; // Default to 5 Mbps if unknown
-            const speedBytesPerSec = (speedMbps * 1024 * 1024) / 8;
-
-            // Calculate duration: Size / Speed
-            // We add a 20% buffer to be safe, and clamp between 5s and 5 minutes
-            const estimatedSeconds = (size / speedBytesPerSec) * 1.2;
-            const finalDurationMs = Math.max(5000, Math.min(300000, estimatedSeconds * 1000));
-
-            console.log(`[MobileStream] Est. Duration: ${finalDurationMs}ms (Size: ${size}b, Speed: ${speedMbps}Mbps)`);
-
-            let msgIndex = 0;
-            const interval = setInterval(() => {
-                setLoadingMessage(LOADING_MESSAGES[msgIndex % LOADING_MESSAGES.length]);
-                msgIndex++;
-            }, 2000); // Slower rotation (2s) so users can read messages during long downloads
-
-            setTimeout(() => {
-                setStatus('complete');
-                clearInterval(interval);
-            }, finalDurationMs);
+            } catch (err) {
+                const message = err instanceof Error ? err.message : 'Mobile download failed';
+                setStatus('error');
+                setError(message);
+            }
             return;
         }
 
