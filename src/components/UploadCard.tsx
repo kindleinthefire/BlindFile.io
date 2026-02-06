@@ -10,6 +10,7 @@ import {
     Upload,
     Copy,
     ExternalLink,
+    RotateCcw,
 } from 'lucide-react';
 import { UploadFile } from '../store/uploadStore';
 import { formatBytes, formatTimeRemaining } from '../lib/crypto';
@@ -215,6 +216,18 @@ export function UploadCard({ file, onPause, onResume, onCancel }: UploadCardProp
                                 </a>
                             </div>
                         </motion.div>
+                    )}
+
+                    {file.status === 'completed' && (
+                        <div className="flex justify-center mt-3">
+                            <button
+                                onClick={() => window.location.href = '/'}
+                                className="flex items-center gap-2 text-xs font-medium text-silver/60 hover:text-white transition-colors"
+                            >
+                                <RotateCcw className="w-3 h-3" />
+                                <span>Back to Home</span>
+                            </button>
+                        </div>
                     )}
                 </div>
 
