@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Zap, Clock, User, CheckCircle, Menu, X, UploadCloud, MessageSquare, Feather, Lock, ArrowRight, Check, Copy, Info } from 'lucide-react';
+import { User, CheckCircle, Menu, X, UploadCloud, MessageSquare, Feather, Lock, ArrowRight, Check, Copy } from 'lucide-react';
 import { UploadCard } from '../components/UploadCard';
 import { UploadStats } from '../components/UploadStats';
 import { DeviceSelectionModal } from '../components/DeviceSelectionModal';

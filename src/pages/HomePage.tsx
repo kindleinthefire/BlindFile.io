@@ -1,6 +1,6 @@
 import { useCallback, Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, File, X, Menu, User, Check, ArrowRight, Shield, Zap, Clock, CheckCircle, MessageSquare, Feather, Copy, Eye, EyeOff, Hash, Info, Lock } from 'lucide-react';
+import { UploadCloud, X, Menu, User, Check, ArrowRight, Shield, Zap, Clock, CheckCircle, MessageSquare, Feather, Copy, Info, Lock } from 'lucide-react';
 import { DeviceSelectionModal } from '../components/DeviceSelectionModal';
 import { UploadCard } from '../components/UploadCard';
 import { useFileUploader } from '../hooks/useFileUploader';
