@@ -331,7 +331,7 @@ export default function DownloadPage() {
             {/* Main content */}
             <main className="flex-1 flex items-center justify-center p-4">
                 <motion.div
-                    className="glass rounded-2xl p-8 max-w-md w-full text-center"
+                    className={`glass rounded-2xl p-8 w-full text-center transition-all duration-500 ease-in-out ${isBlindText && decryptedMessage ? 'max-w-5xl' : 'max-w-md'}`}
                     initial={{ scale: 0.95, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                 >
@@ -453,7 +453,7 @@ export default function DownloadPage() {
                                                 </h2>
 
                                                 {/* Message Content */}
-                                                <div className="w-full max-w-2xl mx-auto bg-stealth-700 rounded-xl p-6 border border-emerald-500/30 mb-4 text-left">
+                                                <div className="w-full mx-auto bg-stealth-700 rounded-xl p-6 border border-emerald-500/30 mb-4 text-left">
                                                     <pre className="text-silver whitespace-pre-wrap font-sans text-base leading-relaxed min-h-[100px] max-h-[60vh] overflow-y-auto">
                                                         {decryptedMessage}
                                                     </pre>
