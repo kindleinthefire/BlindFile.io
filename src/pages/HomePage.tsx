@@ -18,7 +18,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import logo from '../assets/logo.png';
 
 export default function HomePage() {
-    const { upload, pause, resume, cancel } = useFileUploader();
+    const { upload, cancel } = useFileUploader();
     const { getAllFiles, addFile, updateFile } = useUploadStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
@@ -763,8 +763,6 @@ export default function HomePage() {
                                         <UploadCard
                                             key={file.id}
                                             file={file}
-                                            onPause={() => pause(file.id)}
-                                            onResume={() => resume(file.id)}
                                             onCancel={() => cancel(file.id)}
                                         />
                                     ))}

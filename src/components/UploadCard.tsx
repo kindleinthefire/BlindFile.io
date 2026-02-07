@@ -3,8 +3,6 @@ import {
     File,
     CheckCircle,
     AlertCircle,
-    Pause,
-    Play,
     X,
     Lock,
     Upload,
@@ -18,12 +16,10 @@ import { useState } from 'react';
 
 interface UploadCardProps {
     file: UploadFile;
-    onPause: () => void;
-    onResume: () => void;
     onCancel: () => void;
 }
 
-export function UploadCard({ file, onPause, onResume, onCancel }: UploadCardProps) {
+export function UploadCard({ file, onCancel }: UploadCardProps) {
     const [copied, setCopied] = useState(false);
 
     const getStatusIcon = () => {
@@ -36,8 +32,6 @@ export function UploadCard({ file, onPause, onResume, onCancel }: UploadCardProp
                 return <CheckCircle className="w-5 h-5 text-success" />;
             case 'error':
                 return <AlertCircle className="w-5 h-5 text-red-500" />;
-            case 'paused':
-                return <Pause className="w-5 h-5 text-yellow-500" />;
             default:
                 return <File className="w-5 h-5 text-silver/50" />;
         }
@@ -53,8 +47,6 @@ export function UploadCard({ file, onPause, onResume, onCancel }: UploadCardProp
                 return 'Complete';
             case 'error':
                 return file.error || 'Failed';
-            case 'paused':
-                return 'Paused';
             default:
                 return 'Pending';
         }
@@ -98,16 +90,8 @@ export function UploadCard({ file, onPause, onResume, onCancel }: UploadCardProp
                     {/* Controls */}
                     <div className="flex items-center gap-2">
                         {isActive && (
-                            <button
-                                onClick={file.status === 'paused' ? onResume : onPause}
-                                className="p-1.5 rounded-lg hover:bg-white/5 transition-colors"
-                            >
-                                {file.status === 'paused' ? (
-                                    <Play className="w-4 h-4 text-success" />
-                                ) : (
-                                    <Pause className="w-4 h-4 text-yellow-500" />
-                                )}
-                            </button>
+                            /* Pause button removed as requested */
+                            null
                         )}
                         {file.status !== 'completed' && (
                             <button

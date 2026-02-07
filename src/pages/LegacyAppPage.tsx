@@ -17,7 +17,7 @@ import { api } from '../lib/api';
 import logo from '../assets/logo.png';
 
 export default function LegacyAppPage() {
-    const { upload, pause, resume, cancel } = useFileUploader();
+    const { upload, cancel } = useFileUploader();
     const { getAllFiles, addFile, updateFile, stats } = useUploadStore();
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
@@ -563,8 +563,6 @@ export default function LegacyAppPage() {
                                     <UploadCard
                                         key={file.id}
                                         file={file}
-                                        onPause={() => pause(file.id)}
-                                        onResume={() => resume(file.id)}
                                         onCancel={() => cancel(file.id)}
                                     />
                                 ))}
