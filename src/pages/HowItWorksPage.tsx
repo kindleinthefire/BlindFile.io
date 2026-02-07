@@ -122,10 +122,17 @@ export default function HowItWorksPage() {
                         {/* Glow Effect */}
                         <div className="absolute inset-0 rounded-full ring-2 ring-blue-400/20 group-hover:ring-blue-400/40 transition-all animate-pulse" />
                     </button>
-                    <p className="mt-3 text-orange-600 font-bold text-sm tracking-wide">
-                        Desktop Version Only
-                    </p>
                 </motion.div>
+
+                {/* Desktop Version Warning */}
+                <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-orange-600 font-bold text-sm tracking-wide mb-4"
+                >
+                    Desktop Version Only
+                </motion.p>
 
                 {/* STEPS GRID */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
