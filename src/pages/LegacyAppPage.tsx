@@ -13,6 +13,7 @@ import { ProfileModal } from '../components/ProfileModal';
 import { uploadMobileCompatible } from '../lib/mobileUpload';
 import { encryptMessage, generateBlindTextUrl } from '../lib/messageEncryption';
 import { api } from '../lib/api';
+import { BetaBadge } from '../components/BetaBadge';
 
 import logo from '../assets/logo.png';
 
@@ -234,9 +235,7 @@ export default function LegacyAppPage() {
                             />
                             <div>
                                 <h1 className="font-bold text-xl text-silver group-hover:text-white transition-colors">Blind File</h1>
-                                <p className="text-xs text-silver/50">
-                                    Zero-Knowledge Transfer
-                                </p>
+                                <BetaBadge />
                             </div>
                         </Link>
 

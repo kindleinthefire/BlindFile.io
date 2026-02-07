@@ -12,6 +12,7 @@ import { ShootingStarsOverlay } from '../components/ShootingStarsOverlay';
 import { uploadMobileCompatible } from '../lib/mobileUpload';
 import { encryptMessage, generateBlindTextUrl } from '../lib/messageEncryption';
 import { api } from '../lib/api';
+import { BetaBadge } from '../components/BetaBadge';
 
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -261,9 +262,12 @@ export default function HomePage() {
                             alt="Blind File Logo"
                             className="w-32 h-32 object-contain group-hover:scale-105 transition-transform duration-300"
                         />
-                        <span className="font-bold text-xl tracking-[0.25em] text-white/90 group-hover:text-white transition-colors">
-                            BLIND FILE
-                        </span>
+                        <div className="flex flex-col items-start gap-1">
+                            <span className="font-bold text-xl tracking-[0.25em] text-white/90 group-hover:text-white transition-colors">
+                                BLIND FILE
+                            </span>
+                            <BetaBadge />
+                        </div>
                     </Link>
 
                     {/* Desktop Nav (Column Layout for Auth + Menu) */}
@@ -362,6 +366,9 @@ export default function HomePage() {
                         <span className="font-bold text-xl tracking-[0.25em] text-white/90 group-hover:text-white transition-colors -mt-1">
                             BLIND FILE
                         </span>
+                        <div className="scale-75 origin-top">
+                            <BetaBadge />
+                        </div>
                     </Link>
 
                     {/* Hamburger Button */}
