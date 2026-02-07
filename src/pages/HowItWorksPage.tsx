@@ -1,8 +1,8 @@
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ThreeBackground } from '../components/ThreeBackground';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Lock, Globe, Key, ShieldCheck, FileKey, Server, Play } from 'lucide-react';
+import { ArrowLeft, Lock, Globe, Key, ShieldCheck, FileKey, Server, Play, Smartphone, Laptop } from 'lucide-react';
 import { BetaBadge } from '../components/BetaBadge';
 import logo from '../assets/logo.png';
 
@@ -11,13 +11,21 @@ const STEPS = [
         icon: Key,
         title: "CLIENT-SIDE KEY GEN",
         subtitle: "The Origin",
-        description: "Before your file leaves your device, your browser generates a unique 256-bit encryption key. This key is never sent to our servers. It lives only in your local memory and the URL hash fragment."
+        description: "Before your file leaves your device, your browser generates a unique 256-bit encryption key. This key is never sent to our servers. It lives only in your local memory and the URL hash fragment.",
+        mobileContent: {
+            title: "APP-LESS KEY GEN",
+            description: "Your phone generates a random 24-byte password locally in the browser. This ensures that even without a dedicated app, your encryption key is created on-device and never shared with us."
+        }
     },
     {
         icon: Lock,
         title: "AES-GCM ENCRYPTION",
         subtitle: "The Shield",
-        description: "Your file is encrypted locally using AES-256-GCM (Galois/Counter Mode). This military-grade standard ensures both confidentiality and integrity. The result is a meaningless blob of static noise."
+        description: "Your file is encrypted locally using AES-256-GCM (Galois/Counter Mode). This military-grade standard ensures both confidentiality and integrity. The result is a meaningless blob of static noise.",
+        mobileContent: {
+            title: "ZIPCRYPTO ENCRYPTION",
+            description: "To ensure compatibility with the native iOS Files app and Android, we use ZipCrypto. While standard for mobile compatibility, it wraps your file in a password-protected ZIP that opens natively on your device."
+        }
     },
     {
         icon: FileKey,
@@ -46,6 +54,8 @@ const STEPS = [
 ];
 
 export default function HowItWorksPage() {
+    const [viewMode, setViewMode] = useState<'desktop' | 'mobile'>('desktop');
+
     return (
         <div className="relative min-h-screen bg-black overflow-hidden flex flex-col font-sans selection:bg-purple-500/30 text-white">
             {/* --- VISUAL BACKGROUND: Three.js Planet Arc --- */}
@@ -124,39 +134,121 @@ export default function HowItWorksPage() {
                     </button>
                 </motion.div>
 
-                {/* Desktop Version Warning */}
-                <motion.p
+                {/* MODE TOGGLE PILL */}
+                <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
-                    className="text-orange-600 font-bold text-sm tracking-wide mb-4"
+                    className="mb-12 relative z-20"
                 >
-                    Desktop Version Only
-                </motion.p>
+                    <div className="inline-flex p-1 rounded-full bg-white/5 backdrop-blur-md border border-white/10 relative">
+                        {/* Sliding Background */}
+                        <motion.div
+                            className="absolute top-1 bottom-1 rounded-full bg-blue-500 shadow-lg shadow-blue-500/30 z-0"
+                            initial={false}
+                            animate={{
+                                x: viewMode === 'desktop' ? 0 : '100%',
+                                width: '50%'
+                            }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                        />
+
+                        <button
+                            onClick={() => setViewMode('desktop')}
+                            className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold tracking-wide transition-colors flex items-center gap-2 ${viewMode === 'desktop' ? 'text-white' : 'text-white/40 hover:text-white/60'
+                                }`}
+                        >
+                            <Laptop className="w-4 h-4" />
+                            Desktop
+                        </button>
+                        <button
+                            onClick={() => setViewMode('mobile')}
+                            className={`relative z-10 px-6 py-2 rounded-full text-sm font-bold tracking-wide transition-colors flex items-center gap-2 ${viewMode === 'mobile' ? 'text-white' : 'text-white/40 hover:text-white/60'
+                                }`}
+                        >
+                            <Smartphone className="w-4 h-4" />
+                            Mobile
+                        </button>
+                    </div>
+                </motion.div>
 
                 {/* STEPS GRID */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
-                    {STEPS.map((step, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: idx * 0.1 }}
-                            className="bg-zinc-900/30 backdrop-blur-md border border-white/5 rounded-3xl p-8 flex flex-col relative group hover:border-white/10 transition-colors"
-                        >
-                            <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 text-cyan-400">
-                                <step.icon className="w-6 h-6" />
+                    {STEPS.map((step, idx) => {
+                        // Check if this card has unique mobile content
+                        const hasMobileContent = !!step.mobileContent;
+                        const isFlipping = hasMobileContent && viewMode === 'mobile';
+
+                        return (
+                            <div key={idx} className="relative perspective-1000 h-[320px]">
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: idx * 0.1, duration: 0.6 }}
+                                    animate={{
+                                        rotateY: isFlipping ? 180 : 0,
+                                        transition: { duration: 0.6, type: "spring", stiffness: 260, damping: 20 }
+                                    }}
+                                    className="w-full h-full preserve-3d relative"
+                                    style={{ transformStyle: 'preserve-3d' }}
+                                >
+                                    {/* FRONT (Desktop) */}
+                                    <div className="absolute inset-0 backface-hidden bg-zinc-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 flex flex-col group hover:border-white/20 transition-colors">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 border border-white/10">
+                                            <step.icon className="w-6 h-6 text-cyan-400 group-hover:text-cyan-300 transition-colors" />
+                                        </div>
+
+                                        <p className="text-xs font-bold text-cyan-500 mb-2 tracking-widest uppercase opacity-80">
+                                            {step.subtitle}
+                                        </p>
+
+                                        <h3 className="text-xl font-bold text-white mb-3 tracking-tight">
+                                            {step.title}
+                                        </h3>
+
+                                        <p className="text-sm text-silver/70 leading-relaxed font-medium">
+                                            {step.description}
+                                        </p>
+
+                                        {/* Number Watermark */}
+                                        <div className="absolute top-4 right-6 text-8xl font-black text-white/[0.02] select-none pointer-events-none">
+                                            {idx + 1}
+                                        </div>
+                                    </div>
+
+                                    {/* BACK (Mobile - only for cards with mobileContent) */}
+                                    {hasMobileContent && (
+                                        <div
+                                            className="absolute inset-0 backface-hidden bg-gradient-to-br from-blue-900/60 to-black/80 backdrop-blur-md border border-blue-500/30 rounded-3xl p-8 flex flex-col group"
+                                            style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden' }}
+                                        >
+                                            <div className="w-12 h-12 rounded-2xl bg-blue-500/20 flex items-center justify-center mb-6 border border-blue-400/20">
+                                                <Smartphone className="w-6 h-6 text-blue-400" />
+                                            </div>
+
+                                            <p className="text-xs font-bold text-blue-400 mb-2 tracking-widest uppercase opacity-80">
+                                                Mobile Protocol
+                                            </p>
+
+                                            <h3 className="text-xl font-bold text-white mb-3 tracking-tight">
+                                                {step.mobileContent?.title}
+                                            </h3>
+
+                                            <p className="text-sm text-blue-100/70 leading-relaxed font-medium">
+                                                {step.mobileContent?.description}
+                                            </p>
+
+                                            {/* Number Watermark */}
+                                            <div className="absolute top-4 right-6 text-8xl font-black text-blue-500/[0.05] select-none pointer-events-none">
+                                                {idx + 1}
+                                            </div>
+                                        </div>
+                                    )}
+                                </motion.div>
                             </div>
-                            <h2 className="text-2xl font-bold text-white mb-1">{step.title}</h2>
-                            <p className="text-xs font-mono uppercase tracking-widest text-cyan-500 mb-4">{step.subtitle}</p>
-                            <div className="flex-1">
-                                <p className="text-white/60 leading-relaxed text-sm">
-                                    {step.description}
-                                </p>
-                            </div>
-                        </motion.div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* FOOTER CALL TO ACTION */}
