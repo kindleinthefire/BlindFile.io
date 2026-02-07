@@ -21,6 +21,7 @@ import { importKey, formatBytes, decryptMetadata } from '../lib/crypto';
 import { FileDownloader } from '../lib/fileDownloader';
 import { parseDownloadHash } from '../lib/mobileUpload';
 import { parseBlindTextHash, decryptMessage } from '../lib/messageEncryption';
+import { BetaBadge } from '../components/BetaBadge';
 import logo from '../assets/logo.png';
 
 type DownloadStatus =

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Mail, Lock, Loader2, Sparkles } from 'lucide-react';
+import { BetaBadge } from '../components/BetaBadge';
 import logo from '../assets/logo.png';
 
 export default function AuthPage() {
@@ -78,8 +79,11 @@ export default function AuthPage() {
                     ">
                         <div className="text-center mb-8">
                             <div className="flex justify-center mb-6">
-                                <Link to="/">
+                                <Link to="/" className="flex flex-col items-center">
                                     <img src={logo} alt="Blind File Logo" className="w-16 h-16 object-contain hover:opacity-80 transition-opacity" />
+                                    <div className="scale-90 origin-top mt-1">
+                                        <BetaBadge />
+                                    </div>
                                 </Link>
                             </div>
                             <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-white to-white/70 mb-2">

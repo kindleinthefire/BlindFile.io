@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ThreeBackground } from '../components/ThreeBackground';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, Rocket, Shield, Server, Activity } from 'lucide-react';
+import { BetaBadge } from '../components/BetaBadge';
 import logo from '../assets/logo.png';
 
 const FAQ_CATEGORIES = [
@@ -147,12 +148,15 @@ export default function FAQPage() {
                     <span className="font-medium text-sm">Back to Home</span>
                 </Link>
 
-                <Link to="/" className="flex items-center gap-3 group cursor-pointer absolute left-1/2 transform -translate-x-1/2">
+                <Link to="/" className="flex flex-col items-center gap-0 group cursor-pointer absolute left-1/2 transform -translate-x-1/2">
                     <img
                         src={logo}
                         alt="Blind File Logo"
                         className="w-16 h-16 object-contain group-hover:scale-105 transition-transform duration-300"
                     />
+                    <div className="scale-75 origin-top -mt-1">
+                        <BetaBadge />
+                    </div>
                 </Link>
 
                 <div className="w-20" /> {/* Spacer for visual balance */}
