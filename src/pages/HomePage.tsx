@@ -40,6 +40,14 @@ export default function HomePage() {
     const [blindTextLink, setBlindTextLink] = useState<string | null>(null);
     const [linkCopied, setLinkCopied] = useState(false);
 
+    // Auto-select BlindText mode from URL param
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('mode') === 'blindtext') {
+            setUploadMode('message');
+        }
+    }, []);
+
     const MENU_ITEMS = [
         { label: 'How It Works', path: '/how-it-works' },
         { label: 'Pricing', path: '/pricing' },

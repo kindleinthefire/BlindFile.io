@@ -453,8 +453,8 @@ export default function DownloadPage() {
                                                 </h2>
 
                                                 {/* Message Content */}
-                                                <div className="w-full bg-stealth-700 rounded-xl p-4 border border-emerald-500/30 mb-4 text-left">
-                                                    <pre className="text-silver whitespace-pre-wrap font-sans text-base leading-relaxed max-h-[300px] overflow-y-auto">
+                                                <div className="w-full max-w-2xl mx-auto bg-stealth-700 rounded-xl p-6 border border-emerald-500/30 mb-4 text-left">
+                                                    <pre className="text-silver whitespace-pre-wrap font-sans text-base leading-relaxed min-h-[100px] max-h-[60vh] overflow-y-auto">
                                                         {decryptedMessage}
                                                     </pre>
                                                 </div>
@@ -475,6 +475,14 @@ export default function DownloadPage() {
                                                         </>
                                                     )}
                                                 </button>
+
+                                                <Link
+                                                    to="/?mode=blindtext"
+                                                    className="w-full py-3 rounded-xl font-medium bg-white/5 border border-white/10 text-silver hover:bg-white/10 transition-all flex items-center justify-center gap-2 mt-3"
+                                                >
+                                                    <MessageSquare className="w-5 h-5" />
+                                                    Send Your Own BlindText
+                                                </Link>
                                             </>
                                         )}
                                     </>
