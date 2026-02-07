@@ -292,38 +292,20 @@ export default function DownloadPage() {
                 animate={{ y: 0, opacity: 1 }}
             >
                 <div className="container mx-auto px-4 py-4">
-                    <div className="flex items-center justify-between">
-                        <Link to="/" className="flex items-center gap-3 group">
+                    <div className="flex flex-col items-center justify-center py-6">
+                        <Link to="/" className="flex flex-col items-center gap-4 group">
                             <img
                                 src={logo}
                                 alt="Blind File Logo"
-                                className="w-10 h-10 object-contain group-hover:scale-105 transition-transform duration-300"
+                                className="w-32 h-32 object-contain group-hover:scale-105 transition-transform duration-300"
                             />
-                            <div>
-                                <h1 className="font-bold text-xl text-silver group-hover:text-white transition-colors">Blind File</h1>
-                                <p className="text-xs text-silver/50">
+                            <div className="text-center">
+                                <h1 className="font-bold text-5xl text-silver group-hover:text-white transition-colors tracking-tight mb-2">Blind File</h1>
+                                <p className="text-lg text-silver/50 tracking-widest uppercase">
                                     Zero-Knowledge Transfer
                                 </p>
                             </div>
                         </Link>
-
-                        {/* MODE TOGGLE */}
-                        <div className="flex items-center gap-2 bg-white/5 rounded-lg p-1">
-                            <button
-                                onClick={() => setDownloadMode('desktop')}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${downloadMode === 'desktop' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
-                                    }`}
-                            >
-                                Desktop
-                            </button>
-                            <button
-                                onClick={() => setDownloadMode('mobile')}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${downloadMode === 'mobile' ? 'bg-purple-600 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
-                                    }`}
-                            >
-                                Mobile
-                            </button>
-                        </div>
                     </div>
                 </div>
             </motion.header>
