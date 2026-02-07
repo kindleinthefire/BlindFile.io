@@ -122,6 +122,9 @@ export default function HowItWorksPage() {
                         {/* Glow Effect */}
                         <div className="absolute inset-0 rounded-full ring-2 ring-blue-400/20 group-hover:ring-blue-400/40 transition-all animate-pulse" />
                     </button>
+                    <p className="mt-3 text-orange-600 font-bold text-sm tracking-wide">
+                        Desktop Version Only
+                    </p>
                 </motion.div>
 
                 {/* STEPS GRID */}
