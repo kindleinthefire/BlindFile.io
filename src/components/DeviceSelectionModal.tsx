@@ -66,9 +66,12 @@ export function DeviceSelectionModal({ isOpen, onClose, onSelect }: DeviceSelect
                                         {/* Desktop Option */}
                                         <button
                                             onClick={() => handleSelection('desktop')}
-                                            className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-purple-500/50 transition-all group text-left"
+                                            className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-green-500/5 border-2 border-green-500/30 hover:border-green-500/60 transition-all group text-left relative overflow-hidden"
                                         >
-                                            <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mb-4 text-purple-400 group-hover:scale-110 transition-transform">
+                                            <div className="absolute top-0 right-0 bg-green-500 text-black text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
+                                                Recommended
+                                            </div>
+                                            <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-4 text-green-400 group-hover:scale-110 transition-transform">
                                                 <Monitor className="w-6 h-6" />
                                             </div>
                                             <h3 className="text-lg font-bold text-white mb-2">Desktop / Laptop</h3>
@@ -96,19 +99,19 @@ export function DeviceSelectionModal({ isOpen, onClose, onSelect }: DeviceSelect
                                         {/* iOS/Android Option */}
                                         <button
                                             onClick={() => handleSelection('mobileZip')}
-                                            className="p-6 rounded-2xl bg-gradient-to-br from-green-500/10 to-green-500/5 border-2 border-green-500/30 hover:border-green-500/60 transition-all group text-left"
+                                            className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all group text-left"
                                         >
-                                            <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center mb-4 text-green-400 group-hover:scale-110 transition-transform">
+                                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-4 text-white/60 group-hover:scale-110 transition-transform">
                                                 <Apple className="w-6 h-6" />
                                             </div>
                                             <h3 className="text-lg font-bold text-white mb-2">iOS / Android</h3>
 
                                             <div className="space-y-2 mb-4">
-                                                <div className="flex items-center gap-2 text-sm text-yellow-400">
+                                                <div className="flex items-center gap-2 text-sm text-yellow-500/80">
                                                     <AlertTriangle className="w-4 h-4" />
                                                     <span>Password-Protected ZIP</span>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-sm text-green-400">
+                                                <div className="flex items-center gap-2 text-sm text-white/50">
                                                     <CheckCircle className="w-4 h-4" />
                                                     <span>Opens Natively in Files</span>
                                                 </div>
