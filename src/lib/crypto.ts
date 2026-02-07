@@ -214,7 +214,8 @@ export function formatSpeed(bytesPerSecond: number): string {
 /**
  * Format time remaining
  */
-export function formatTimeRemaining(seconds: number): string {
+export function formatTimeRemaining(seconds: number | undefined): string {
+    if (!seconds || !Number.isFinite(seconds)) return '...';
     if (seconds < 60) return `${Math.ceil(seconds)}s`;
     if (seconds < 3600) return `${Math.ceil(seconds / 60)}m`;
     return `${Math.floor(seconds / 3600)}h ${Math.ceil((seconds % 3600) / 60)}m`;

@@ -205,6 +205,14 @@ export function parseDownloadHash(hash: string): {
         return { isMobileZip: false, password: '' };
     }
 
+    // Decode URL-encoded characters (fixes iOS/Safari issues)
+    try {
+        hash = decodeURIComponent(hash);
+    } catch (e) {
+        // If decoding fails, continue with raw hash
+        console.warn('Failed to decode hash:', e);
+    }
+
     if (hash.includes('|')) {
         const [password, encodedFilename] = hash.split('|');
         try {
