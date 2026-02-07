@@ -256,8 +256,8 @@ export default function DownloadPage() {
         setDecryptedMessage(null);
 
         try {
-            // Fetch the encrypted blob
-            const response = await fetch(`/api/download/${id}`);
+            // Fetch the encrypted blob using the file endpoint (not the info endpoint)
+            const response = await fetch(`/api/download/${id}/file`);
             if (!response.ok) {
                 throw new Error('Failed to fetch encrypted message');
             }
