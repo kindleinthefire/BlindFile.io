@@ -120,10 +120,12 @@ export default function HomePage() {
 
             const result = await uploadMobileCompatible(pendingFile, {
                 password: password,
-                onProgress: (percent) => {
+                onProgress: (percent, speed, timeRemaining) => {
                     updateFile(localId, {
                         encryptionProgress: percent,
-                        uploadProgress: percent
+                        uploadProgress: percent,
+                        speed: speed || 0,
+                        timeRemaining: timeRemaining || 0
                     });
                 },
                 onComplete: (downloadUrl) => {

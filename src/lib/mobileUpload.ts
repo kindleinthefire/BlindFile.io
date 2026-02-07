@@ -42,7 +42,7 @@ function obfuscateFilename(originalFilename: string): string {
 }
 
 interface MobileUploadCallbacks {
-    onProgress?: (percent: number) => void;
+    onProgress?: (percent: number, speed?: number, timeRemaining?: number) => void;
     onComplete?: (downloadUrl: string) => void;
     onError?: (error: Error) => void;
     password?: string; // User-defined password (optional)
@@ -53,6 +53,51 @@ interface MobileUploadResult {
     password: string;
     downloadUrl: string;
     originalFilename: string;
+}
+
+// Simple throughput tracker
+class ThroughputTracker {
+    private lastUpdate: number;
+    private bytesProcessed: number;
+    private lastBytes: number;
+    private speed: number = 0;
+    private smoothingFactor = 0.1; // Low pass filter for speed stability
+
+    constructor() {
+        this.lastUpdate = Date.now();
+        this.bytesProcessed = 0;
+        this.lastBytes = 0;
+    }
+
+    update(currentBytes: number) {
+        const now = Date.now();
+        const timeDiff = (now - this.lastUpdate) / 1000; // seconds
+
+        if (timeDiff >= 0.5) { // Update speed every 500ms
+            const bytesDiff = currentBytes - this.lastBytes;
+            const currentSpeed = bytesDiff / timeDiff;
+
+            // Smooth the speed
+            this.speed = this.speed === 0
+                ? currentSpeed
+                : (this.speed * (1 - this.smoothingFactor)) + (currentSpeed * this.smoothingFactor);
+
+            this.lastUpdate = now;
+            this.lastBytes = currentBytes;
+        }
+
+        this.bytesProcessed = currentBytes;
+    }
+
+    getSpeed(): number {
+        return this.speed;
+    }
+
+    getETA(totalBytes: number): number {
+        if (this.speed === 0) return 0;
+        const remaining = totalBytes - this.bytesProcessed;
+        return Math.max(0, remaining / this.speed);
+    }
 }
 
 /**
@@ -77,7 +122,15 @@ export async function uploadMobileCompatible(
         const obfuscatedName = obfuscateFilename(file.name);
 
         // 3. Create ZIP with ZipCrypto
-        const zipBlob = await createZipWithPassword(file, obfuscatedName, password, callbacks?.onProgress);
+        const zipTracker = new ThroughputTracker();
+        const zipBlob = await createZipWithPassword(file, obfuscatedName, password, (percent, currentBytes, totalBytes) => {
+            if (callbacks?.onProgress) {
+                zipTracker.update(currentBytes);
+                const speed = zipTracker.getSpeed();
+                const eta = zipTracker.getETA(totalBytes);
+                callbacks.onProgress(percent, speed, eta);
+            }
+        });
 
         // 4. Calculate ZIP size
         const zipSize = zipBlob.size;
@@ -89,15 +142,21 @@ export async function uploadMobileCompatible(
             'application/zip'
         );
 
-        // 6. Upload the ZIP in a single part (most ZIPs are manageable size)
-        // For very large files, this would need to be chunked, but ZipCrypto
-        // files are typically smaller and simpler
+        // 6. Upload the ZIP in a single part
+        const uploadTracker = new ThroughputTracker();
         const uploadResponse = await uploadZipBlob(
             initResponse.id,
             initResponse.uploadId,
             zipBlob,
             initResponse.partSize,
-            callbacks?.onProgress
+            (percent, currentBytes) => {
+                if (callbacks?.onProgress) {
+                    uploadTracker.update(currentBytes);
+                    const speed = uploadTracker.getSpeed();
+                    const eta = uploadTracker.getETA(zipSize);
+                    callbacks.onProgress(percent, speed, eta);
+                }
+            }
         );
 
         // 7. Complete the upload
@@ -134,7 +193,7 @@ async function createZipWithPassword(
     file: File,
     entryName: string,
     password: string,
-    onProgress?: (percent: number) => void
+    onProgress?: (percent: number, current: number, total: number) => void
 ): Promise<Blob> {
     const blobWriter = new BlobWriter('application/zip');
 
@@ -149,7 +208,8 @@ async function createZipWithPassword(
     await zipWriter.add(entryName, new BlobReader(file), {
         onprogress: (current: number, total: number): undefined => {
             if (onProgress) {
-                onProgress((current / total) * 50); // 0-50% for ZIP creation
+                // 0-50% for ZIP creation
+                onProgress((current / total) * 50, current, total);
             }
             return undefined;
         }
@@ -167,10 +227,11 @@ async function uploadZipBlob(
     uploadId: string,
     blob: Blob,
     partSize: number,
-    onProgress?: (percent: number) => void
+    onProgress?: (percent: number, currentBytes: number) => void
 ): Promise<{ parts: Array<{ partNumber: number; etag: string }> }> {
     const parts: Array<{ partNumber: number; etag: string }> = [];
     const totalParts = Math.ceil(blob.size / partSize);
+    let uploadedBytes = 0;
 
     for (let i = 0; i < totalParts; i++) {
         const start = i * partSize;
@@ -182,10 +243,12 @@ async function uploadZipBlob(
         const result = await api.uploadPart(id, uploadId, uploadId, i + 1, data);
         parts.push({ partNumber: result.partNumber, etag: result.etag });
 
+        uploadedBytes += chunk.size;
+
         // Update progress (50-100% for upload)
         if (onProgress) {
-            const uploadPercent = ((i + 1) / totalParts) * 50;
-            onProgress(50 + uploadPercent);
+            const uploadPercent = (uploadedBytes / blob.size) * 50;
+            onProgress(50 + uploadPercent, uploadedBytes);
         }
     }
 
