@@ -300,11 +300,14 @@ export default function DownloadPage() {
                                 alt="Blind File Logo"
                                 className="w-32 h-32 object-contain group-hover:scale-105 transition-transform duration-300"
                             />
-                            <div className="text-center">
+                            <div className="text-center flex flex-col items-center">
                                 <h1 className="font-bold text-5xl text-silver group-hover:text-white transition-colors tracking-tight mb-2">Blind File</h1>
-                                <p className="text-lg text-silver/50 tracking-widest uppercase">
+                                <p className="text-lg text-silver/50 tracking-widest uppercase mb-4">
                                     Zero-Knowledge Transfer
                                 </p>
+                                <div className="scale-110">
+                                    <BetaBadge />
+                                </div>
                             </div>
                         </Link>
                     </div>
