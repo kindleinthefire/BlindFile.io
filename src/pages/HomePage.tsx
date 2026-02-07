@@ -19,7 +19,7 @@ import logo from '../assets/logo.png';
 
 export default function HomePage() {
     const { upload, cancel } = useFileUploader();
-    const { getAllFiles, addFile, updateFile } = useUploadStore();
+    const { getAllFiles, addFile, updateFile, reset } = useUploadStore();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -255,7 +255,7 @@ export default function HomePage() {
                 {/* DESKTOP HEADER LAYOUT */}
                 <div className="hidden md:flex items-center justify-between w-full">
                     {/* Logo */}
-                    <Link to="/" className="flex items-center gap-3 group cursor-pointer">
+                    <Link to="/" onClick={reset} className="flex items-center gap-3 group cursor-pointer">
                         <img
                             src={logo}
                             alt="Blind File Logo"
@@ -353,7 +353,7 @@ export default function HomePage() {
 
                 {/* MOBILE HEADER LAYOUT (Centered Logo + Menu) */}
                 <div className="md:hidden w-full flex flex-col items-center relative gap-2">
-                    <Link to="/" className="flex flex-col items-center gap-0 group cursor-pointer">
+                    <Link to="/" onClick={reset} className="flex flex-col items-center gap-0 group cursor-pointer">
                         <img
                             src={logo}
                             alt="Blind File Logo"
@@ -772,7 +772,7 @@ export default function HomePage() {
                             </div>
 
                             <div className="mt-8 flex justify-center">
-                                <GlassPillButton label="Back to Home" icon={<ArrowRight className="w-4 h-4 ml-2" />} onClick={() => {/* Logic to clear or just view? For now visual */ }} />
+                                <GlassPillButton label="Back to Home" icon={<ArrowRight className="w-4 h-4 ml-2" />} onClick={reset} />
                             </div>
                         </motion.div>
                     )}
@@ -786,7 +786,7 @@ export default function HomePage() {
                     © 2026 Blind File. Engineered in Reston, VA.
                 </p>
             </footer>
-        </div >
+        </div>
     );
 }
 
