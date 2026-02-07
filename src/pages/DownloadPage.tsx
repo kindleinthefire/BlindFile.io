@@ -178,7 +178,7 @@ export default function DownloadPage() {
                     clearInterval(heartbeatInterval);
                 }, 30000);
 
-                channel.port1.onmessage = (event) => {
+                channel.port1.onmessage = (event: MessageEvent) => {
                     if (event.data === 'READY') {
                         // Clear heartbeats immediately upon connection success
                         clearInterval(heartbeatInterval);
