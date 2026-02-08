@@ -18,6 +18,11 @@ const FAQ_CATEGORIES = [
                 a: "A \"Blind File\" is data that has been encrypted before it ever leaves your gravitational pull (your device). We call it \"Blind\" because even we, the service providers, cannot see what is inside. To us, your 500GB project file looks identical to 500GB of static noise. We transport the container, but we do not hold the key."
             },
             {
+                id: "blind-text",
+                q: "What is a \"BlindText\" then?",
+                a: "A \"BlindText\" is a secure, single-use message capsule. Instead of a file, we encrypt raw text—like a password or API key—directly in your browser. The link contains the decryption key, meaning we store only encrypted ciphertext. You can set it to self-destruct after reading, ensuring your secret exists for exactly one pair of eyes before vanishing."
+            },
+            {
                 id: "file-expiry",
                 q: "How long do files last?",
                 a: "All data on BlindFile is ephemeral.\n\nGuests & Free Accounts: Files exist for 24 hours before they encounter a \"decay orbit\" and are permanently deleted from our servers.\n\nPro & Unlimited: You control the decay. Set files to self-destruct after 1 download, 1 hour, or keep them in stable orbit for up to 7 days."
