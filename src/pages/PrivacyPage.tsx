@@ -37,26 +37,26 @@ const SECTIONS = [
             We do not store original filenames in plaintext. Files are renamed to random UUIDs (e.g., \`550e8400-e29b...\`) upon receipt. Metadata (filename, type) is encrypted client-side and stored as an opaque blob. We cannot "search" our database for a specific filename or user content.
 
             **Auto-Decay:**
-            All files are ephemeral. They are automatically deleted from our servers after their expiration period (24 hours for guests, up to 7 days for Pro users). This deletion is permanent and irreversible (crypto-shredding).
+            All files are ephemeral. They are automatically deleted from our servers after their expiration period (24 hours for guests, up to 7 days for Pro users). This deletion is permanent and irreversible.
         `
     },
     {
         icon: AlertTriangle,
         title: "THE MOBILE ANOMALY",
-        subtitle: "Hybrid Protocol Disclosure",
-        summary: "Mobile phones are weak. We briefly help them carry the weight, then we forget we ever did.",
+        subtitle: "Native Zero-Knowledge Protocol",
+        summary: "Mobile phones are weak. We adapt the encryption, not the privacy. Zero-Knowledge remains absolute.",
         content: `
             **Transparency Disclosure:**
-            Mobile browsers lack the memory management required to decrypt multi-gigabyte files client-side. To enable mobile downloads, we utilize a **Server-Side Bridge Protocol**.
+            Mobile browsers lack the memory management required to decrypt massive files client-side via AES-GCM. Previously, this required a server-side bridge. **This is no longer the case.** We have transitioned to a fully **Client-Side ZipCrypto Protocol**.
 
-            **The Process:**
-            1. The encrypted file is fetched to a secure, isolated memory sandbox on our server.
-            2. It is temporarily decrypted using the key you provide.
-            3. It is immediately streamed to your device via standard HTTPS.
-            4. **The Guarantee:** Once the stream closes, the decrypted data is wiped from RAM instantly. It is never written to disk.
+            **The New Process:**
+            1. Files destined for mobile are encrypted into a password-protected ZIP container on the sender's device.
+            2. The password is generated locally and displayed only to the sender.
+            3. The encrypted container is stored on our Edge Network.
+            4. During download, your mobile device's native OS (iOS Files / Android) handles the decryption locally using the password you provide.
 
-            **Risk Profile:**
-            While strictly encrypted in transit, for the brief duration of a mobile download, the file is theoretically visible to the server process. For absolute Zero-Knowledge assurance, we strictly recommend using a Desktop terminal.
+            **Zero-Knowledge Certified:**
+            At no point does the unencrypted file or the password touch our servers. We transport the locked container; you hold the only key. The "Mobile Anomaly" is resolved.
         `
     },
     {
