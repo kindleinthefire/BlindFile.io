@@ -20,7 +20,7 @@ const FAQ_CATEGORIES = [
             {
                 id: "blind-text",
                 q: "What is a \"BlindText\" then?",
-                a: "A \"BlindText\" is a secure, single-use message capsule. Instead of a file, we encrypt raw text—like a password or API key—directly in your browser. The link contains the decryption key, meaning we store only encrypted ciphertext. You can set it to self-destruct after reading, ensuring your secret exists for exactly one pair of eyes before vanishing."
+                a: "A \"BlindText\" is a secure, single-use message capsule. Instead of a file, we encrypt raw text—like a password or API key—directly in your browser. The link contains the decryption key, meaning we store only encrypted ciphertext. You also set your own password that the end user will need to open up the encrypted link and view the message. This feature is unlimited and free and is ideal for sharing sensitive information like personal passwords, API Secret Keys or even the latest work drama."
             },
             {
                 id: "file-expiry",
