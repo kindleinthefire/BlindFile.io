@@ -31,7 +31,11 @@ const STEPS = [
         icon: FileKey,
         title: "METADATA OBFUSCATION",
         subtitle: "Total Blindness",
-        description: "We don't just encrypt the content. We encrypt the filename and MIME type too. Our servers receive a generic 'UUID.bin' file. We have zero knowledge of what you are storing."
+        description: "We don't just encrypt the content. We encrypt the filename and MIME type too. Our servers receive a generic 'UUID.bin' file. We have zero knowledge of what you are storing.",
+        mobileContent: {
+            title: "ZIP CONTAINER MASKING",
+            description: "Inside the encrypted ZIP bundle, your file is automatically renamed to a generic 'blindfile_content'. The encryption password acts as the key to reveal the true filename only upon decryption."
+        }
     },
     {
         icon: Server,
