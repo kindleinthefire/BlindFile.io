@@ -38,6 +38,7 @@ const SECTIONS = [
 
             **Auto-Decay:**
             All files are ephemeral. They are automatically deleted from our servers after their expiration period (24 hours for guests, up to 7 days for Pro users). This deletion is permanent and irreversible.
+            Pro & Unlimited: You control the decay. Set files to self-destruct after 1 day, or keep them in stable orbit for up to 60 days. (credit based system)
         `
     },
     {
