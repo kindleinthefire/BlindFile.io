@@ -296,8 +296,9 @@ export function ProfileModal({ isOpen, onClose, session }: ProfileModalProps) {
                             </div>
                         </motion.div>
                     </motion.div>
+                </>
             )}
-                </AnimatePresence>,
-            document.body
-            );
+        </AnimatePresence>,
+        document.body
+    );
 }
