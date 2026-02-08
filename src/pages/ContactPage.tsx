@@ -81,7 +81,7 @@ export default function ContactPage() {
                             <p className="text-white/60 leading-relaxed mb-6 text-sm">
                                 Check the Mission Briefing (FAQ) first.
                                 <br /><br />
-                                <span className="text-red-400 font-medium">Note:</span> Due to Zero-Knowledge architecture, support staff <strong className="text-white">cannot</strong> recover lost links, reset passwords, or view file contents. No exceptions.
+                                Due to Zero-Knowledge architecture, support staff <strong className="text-white">cannot</strong> recover lost links, reset BlindText passwords, or view file contents. No exceptions. We can assist however with resetting user accounts and investigating technical issues.
                             </p>
                         </div>
                         <div className="grid grid-cols-2 gap-4 mt-4">
