@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, LogOut, HardDrive, Calendar, User, Crown, Mail, CreditCard, ShieldCheck, Sparkles, Share2, Users, Key, ChevronRight, Clock, AlertTriangle, Infinity } from 'lucide-react';
+import { X, LogOut, HardDrive, Calendar, User, Crown, Mail, CreditCard, ShieldCheck, Sparkles, Key, ChevronRight, Clock, AlertTriangle, Infinity } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getUserStats, UserStats } from '../lib/userStats';
 
@@ -10,6 +10,23 @@ interface ProfileModalProps {
     onClose: () => void;
     session: any;
 }
+
+const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+};
 
 export function ProfileModal({ isOpen, onClose, session }: ProfileModalProps) {
     const [stats, setStats] = useState<UserStats | null>(null);
@@ -23,7 +40,7 @@ export function ProfileModal({ isOpen, onClose, session }: ProfileModalProps) {
     const subscription = profile.subscription || null;
 
     // Map stats to UI
-    const storageUsed = formatBytes(stats?.total_uploaded || 0);
+    const storageUsed = loading ? '...' : formatBytes(stats?.total_uploaded || 0);
     // UserStats doesn't have file count or downloads, use placeholders or real props if available.
     // For now we will hide them or using basic derived values if possible. 
     // Since we don't have them in UserStats, we'll comment out or remove those specific stats to avoid errors,
@@ -48,22 +65,7 @@ export function ProfileModal({ isOpen, onClose, session }: ProfileModalProps) {
         window.location.reload();
     };
 
-    const formatBytes = (bytes: number) => {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    };
 
-    const formatDate = (dateString: string | null) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-        });
-    };
 
     return createPortal(
         <AnimatePresence>
@@ -110,8 +112,8 @@ export function ProfileModal({ isOpen, onClose, session }: ProfileModalProps) {
                                     </div>
                                     {/* Status Indicator */}
                                     <div className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-zinc-900 ${plan === 'unlimited' ? 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]' :
-                                            plan === 'pro' ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' :
-                                                'bg-zinc-500'
+                                        plan === 'pro' ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' :
+                                            'bg-zinc-500'
                                         }`} />
                                 </div>
 
@@ -215,7 +217,7 @@ export function ProfileModal({ isOpen, onClose, session }: ProfileModalProps) {
                                         <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-3 text-emerald-400 group-hover:scale-110 transition-transform">
                                             <Calendar className="w-5 h-5" />
                                         </div>
-                                        <div className="text-2xl font-bold text-white mb-1">{formatBytes(stats?.last_30_days_uploaded || 0)}</div>
+                                        <div className="text-2xl font-bold text-white mb-1">{loading ? '...' : formatBytes(stats?.last_30_days_uploaded || 0)}</div>
                                         <div className="text-[10px] uppercase tracking-wider text-white/40">30-Day Usage</div>
                                     </div>
                                 </div>
