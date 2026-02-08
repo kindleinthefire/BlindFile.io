@@ -1,9 +1,10 @@
-import { Suspense } from 'react';
-import { motion } from 'framer-motion';
+import { Suspense, useState, FormEvent } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ThreeBackground } from '../components/ThreeBackground';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Shield, Zap, Clock, Rocket, Globe, Database, Infinity } from 'lucide-react';
+import { ArrowLeft, Shield, Zap, Clock, Rocket, Globe, Database, Infinity, X, Check, Loader2 } from 'lucide-react';
 import { BetaBadge } from '../components/BetaBadge';
+import { supabase } from '../lib/supabase';
 import logo from '../assets/logo.png';
 
 const PRICING_TIERS = [
@@ -56,8 +57,8 @@ const PRICING_TIERS = [
             { icon: Zap, text: 'Global Edge Acceleration' },
             { icon: Clock, text: 'Custom Expiry Settings' },
         ],
-        buttonText: 'Go Pro',
-        buttonLink: '/auth?plan=pro',
+        buttonText: 'Join Waiting List',
+        buttonLink: '#waitlist',
         highlight: true,
         animationDelay: 0.5,
         duration: 7
@@ -74,15 +75,145 @@ const PRICING_TIERS = [
             { icon: Globe, text: '500GB File Limit' },
             { icon: Infinity, text: 'Unlimited Monthly Sends*' },
         ],
-        buttonText: 'Contact Sales',
-        buttonLink: '/contact',
+        buttonText: 'Join Waiting List',
+        buttonLink: '#waitlist',
         highlight: false,
         animationDelay: 2,
         duration: 8
     }
 ];
 
+function WaitingListModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+    const [email, setEmail] = useState('');
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [errorMsg, setErrorMsg] = useState('');
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!email) return;
+
+        setStatus('loading');
+        setErrorMsg('');
+
+        try {
+            const { error } = await supabase
+                .from('waiting_list')
+                .insert({ email });
+
+            if (error) {
+                if (error.code === '23505') { // Unique violation
+                    setStatus('success'); // Treat duplicate as success to avoid leaking info/annoying user
+                } else {
+                    throw error;
+                }
+            } else {
+                setStatus('success');
+            }
+        } catch (err) {
+            console.error('Waitlist error:', err);
+            setStatus('error');
+            setErrorMsg('Failed to join. Please try again.');
+        }
+    };
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    {/* Backdrop */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60]"
+                    />
+
+                    {/* Modal */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-zinc-900 border border-white/10 rounded-2xl p-8 z-[70] shadow-2xl shadow-purple-900/20"
+                    >
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="text-center mb-6">
+                            <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-4 border border-purple-500/30">
+                                <Rocket className="w-6 h-6 text-purple-400" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-white mb-2">Join the Waiting List</h2>
+                            <p className="text-white/60 text-sm">
+                                Spot secured. Launch imminent. <br />
+                                Be the first to access Pro features when we lift off.
+                            </p>
+                        </div>
+
+                        {status === 'success' ? (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center"
+                            >
+                                <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+                                    <Check className="w-6 h-6 text-emerald-400" />
+                                </div>
+                                <h3 className="text-white font-bold mb-1">You're on the list!</h3>
+                                <p className="text-white/60 text-sm">We'll notify you as soon as spots open up.</p>
+                                <button
+                                    onClick={onClose}
+                                    className="mt-4 text-sm text-emerald-400 hover:text-emerald-300 font-medium"
+                                >
+                                    Close
+                                </button>
+                            </motion.div>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                <div>
+                                    <input
+                                        type="email"
+                                        placeholder="Enter your email"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all"
+                                    />
+                                </div>
+
+                                {status === 'error' && (
+                                    <p className="text-red-400 text-sm text-center">{errorMsg}</p>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={status === 'loading'}
+                                    className="w-full bg-purple-600 hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2"
+                                >
+                                    {status === 'loading' ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                            Joining...
+                                        </>
+                                    ) : (
+                                        'Secure My Spot'
+                                    )}
+                                </button>
+                            </form>
+                        )}
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
+    );
+}
+
 export default function PricingPage() {
+    const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
     return (
         <div className="relative min-h-screen bg-black overflow-hidden flex flex-col font-sans selection:bg-purple-500/30 text-white">
             {/* --- VISUAL BACKGROUND: Three.js Planet Arc --- */}
@@ -190,19 +321,33 @@ export default function PricingPage() {
                                 ))}
                             </div>
 
-                            <Link
-                                to={tier.buttonLink}
-                                className={`
-                                    w-full py-3 rounded-xl font-bold text-center transition-all duration-300
-                                    ${tier.highlight
-                                        ? 'bg-purple-600 text-white hover:bg-purple-500 shadow-lg shadow-purple-900/40'
-                                        : 'bg-white/10 text-white hover:bg-white/20'
-                                    }
-                                `}
-                            >
-                                {tier.buttonText}
-                            </Link>
-
+                            {tier.buttonLink === '#waitlist' ? (
+                                <button
+                                    onClick={() => setIsWaitlistOpen(true)}
+                                    className={`
+                                        w-full py-3 rounded-xl font-bold text-center transition-all duration-300
+                                        ${tier.highlight
+                                            ? 'bg-purple-600 text-white hover:bg-purple-500 shadow-lg shadow-purple-900/40'
+                                            : 'bg-white/10 text-white hover:bg-white/20'
+                                        }
+                                    `}
+                                >
+                                    {tier.buttonText}
+                                </button>
+                            ) : (
+                                <Link
+                                    to={tier.buttonLink}
+                                    className={`
+                                        w-full py-3 rounded-xl font-bold text-center transition-all duration-300 block
+                                        ${tier.highlight
+                                            ? 'bg-purple-600 text-white hover:bg-purple-500 shadow-lg shadow-purple-900/40'
+                                            : 'bg-white/10 text-white hover:bg-white/20'
+                                        }
+                                    `}
+                                >
+                                    {tier.buttonText}
+                                </Link>
+                            )}
                         </motion.div>
                     ))}
                 </div>
@@ -223,6 +368,11 @@ export default function PricingPage() {
                 </footer>
 
             </main>
+
+            <WaitingListModal
+                isOpen={isWaitlistOpen}
+                onClose={() => setIsWaitlistOpen(false)}
+            />
         </div>
     );
 }
