@@ -47,12 +47,12 @@ const FAQ_CATEGORIES = [
             {
                 id: "sell-data",
                 q: "Do you sell user data?",
-                a: "We have nothing to sell. Because we utilize Zero-Knowledge Architecture, we do not possess your files, passwords, or keys. We cannot sell what we cannot see."
+                a: "No. We do not sell your personal data to anyone. Also, because we utilize Zero-Knowledge Architecture, we do not possess your files, passwords, or keys. We cannot sell what we cannot see."
             },
             {
                 id: "mobile-encryption",
                 q: "Is mobile downloading Zero-Knowledge?",
-                a: "Status: ZERO-KNOWLEDGE (Native). While mobile browsers lack the memory to decrypt massive files via AES-GCM without crashing, we solved this by implementing native ZipCrypto support.\n\nThe Process: Your file is encrypted into a password-protected ZIP on your device before upload. The password is generated locally and never sent to us.\n\nThe Trade-off: To ensure you can open files natively in the iOS Files app, we use standard ZipCrypto encryption. While slightly less robust than our Desktop AES-256-GCM, it ensures the server NEVER sees your unencrypted data.\n\nThe Guarantee: Zero logs. Zero copies. Zero knowledge. Your phone creates the lock, and only the recipient has the key."
+                a: "Yes, 100% - however... While mobile browsers lack the memory to decrypt massive files via AES-GCM without crashing, we solved this by implementing native ZipCrypto support.\n\nThe Process: Your file is encrypted into a password-protected ZIP on your device before upload. The password is generated locally and never sent to us.\n\nThe Trade-off: To ensure you can open files natively in the iOS Files app, we use standard ZipCrypto encryption. While slightly less robust than our Desktop AES-256-GCM, it ensures the server NEVER sees your unencrypted data.\n\nThe Guarantee: Zero logs. Zero copies. Zero knowledge. Your phone creates the lock, and only the recipient has the key."
             }
         ]
     },
