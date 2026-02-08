@@ -105,108 +105,112 @@ function ContactModal({ isOpen, onClose, type }: ContactModalProps) {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        onClick={onClose}
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9998]"
-                    />
-
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl p-8 z-[9999] shadow-2xl"
+                        className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
                     >
-                        <button
+                        <div
+                            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
                             onClick={onClose}
-                            className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+                        />
+
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl p-8 shadow-2xl overflow-y-auto max-h-[90vh]"
                         >
-                            <X className="w-5 h-5" />
-                        </button>
-
-                        <div className="text-center mb-6">
-                            <div className={`w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mx-auto mb-4 border ${theme.border}`}>
-                                <Icon className={`w-6 h-6 ${theme.text}`} />
-                            </div>
-                            <h2 className="text-2xl font-bold text-white mb-2">{content.title}</h2>
-                            <p className="text-white/60 text-sm">{content.desc}</p>
-                        </div>
-
-                        {status === 'success' ? (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center"
+                            <button
+                                onClick={onClose}
+                                className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
                             >
-                                <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
-                                    <Check className="w-6 h-6 text-emerald-400" />
-                                </div>
-                                <h3 className="text-white font-bold mb-1">Transmission Received</h3>
-                                <p className="text-white/60 text-sm">Your message has been securely logged. Our team will review it shortly.</p>
-                                <button
-                                    onClick={onClose}
-                                    className="mt-4 text-sm text-emerald-400 hover:text-emerald-300 font-medium"
-                                >
-                                    Close Channel
-                                </button>
-                            </motion.div>
-                        ) : (
-                            <form onSubmit={handleSubmit} className="space-y-4">
-                                <div>
-                                    <label className="block text-xs uppercase tracking-wider text-white/40 mb-1">Identity</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Your Name / Handle"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        required
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-all"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs uppercase tracking-wider text-white/40 mb-1">Comms Frequency</label>
-                                    <input
-                                        type="email"
-                                        placeholder="Return Email Address"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-all"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs uppercase tracking-wider text-white/40 mb-1">Payload</label>
-                                    <textarea
-                                        placeholder="Message contents..."
-                                        value={message}
-                                        onChange={(e) => setMessage(e.target.value)}
-                                        required
-                                        rows={4}
-                                        className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-all resize-none"
-                                    />
-                                </div>
+                                <X className="w-5 h-5" />
+                            </button>
 
-                                {status === 'error' && (
-                                    <p className="text-red-400 text-sm text-center">{errorMsg}</p>
-                                )}
+                            <div className="text-center mb-6">
+                                <div className={`w-12 h-12 rounded-full ${theme.bg} flex items-center justify-center mx-auto mb-4 border ${theme.border}`}>
+                                    <Icon className={`w-6 h-6 ${theme.text}`} />
+                                </div>
+                                <h2 className="text-2xl font-bold text-white mb-2">{content.title}</h2>
+                                <p className="text-white/60 text-sm">{content.desc}</p>
+                            </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={status === 'loading'}
-                                    className={`w-full ${theme.button} disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2`}
+                            {status === 'success' ? (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-6 text-center"
                                 >
-                                    {status === 'loading' ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Encrypting & Sending...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send className="w-4 h-4" />
-                                            Transmit Securely
-                                        </>
+                                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+                                        <Check className="w-6 h-6 text-emerald-400" />
+                                    </div>
+                                    <h3 className="text-white font-bold mb-1">Transmission Received</h3>
+                                    <p className="text-white/60 text-sm">Your message has been securely logged. Our team will review it shortly.</p>
+                                    <button
+                                        onClick={onClose}
+                                        className="mt-4 text-sm text-emerald-400 hover:text-emerald-300 font-medium"
+                                    >
+                                        Close Channel
+                                    </button>
+                                </motion.div>
+                            ) : (
+                                <form onSubmit={handleSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs uppercase tracking-wider text-white/40 mb-1">Identity</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Your Name / Handle"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            required
+                                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs uppercase tracking-wider text-white/40 mb-1">Comms Frequency</label>
+                                        <input
+                                            type="email"
+                                            placeholder="Return Email Address"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            required
+                                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-all"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs uppercase tracking-wider text-white/40 mb-1">Payload</label>
+                                        <textarea
+                                            placeholder="Message contents..."
+                                            value={message}
+                                            onChange={(e) => setMessage(e.target.value)}
+                                            required
+                                            rows={4}
+                                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/20 focus:outline-none focus:border-white/30 transition-all resize-none"
+                                        />
+                                    </div>
+
+                                    {status === 'error' && (
+                                        <p className="text-red-400 text-sm text-center">{errorMsg}</p>
                                     )}
-                                </button>
-                            </form>
-                        )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={status === 'loading'}
+                                        className={`w-full ${theme.button} disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2`}
+                                    >
+                                        {status === 'loading' ? (
+                                            <>
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Encrypting & Sending...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Send className="w-4 h-4" />
+                                                Transmit Securely
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
+                            )}
+                        </motion.div>
                     </motion.div>
                 </>
             )}
