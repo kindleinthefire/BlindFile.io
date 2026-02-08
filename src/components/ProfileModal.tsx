@@ -15,12 +15,21 @@ export function ProfileModal({ isOpen, onClose, session }: ProfileModalProps) {
     const [stats, setStats] = useState<UserStats | null>(null);
     const [loading, setLoading] = useState(false);
 
-    // Mock data for UI development if session is missing properties
+    // Derived state
     const user = session?.user;
     const profile = user?.user_metadata || {};
     const displayName = profile.full_name || user?.email?.split('@')[0];
-    const plan = profile.plan || 'free'; // 'free' | 'pro' | 'unlimited'
-    const subscription = { current_period_end: new Date().toISOString() }; // Mock subscription
+    const plan = profile.plan || 'free';
+    const subscription = profile.subscription || null;
+
+    // Map stats to UI
+    const storageUsed = formatBytes(stats?.total_uploaded || 0);
+    // UserStats doesn't have file count or downloads, use placeholders or real props if available.
+    // For now we will hide them or using basic derived values if possible. 
+    // Since we don't have them in UserStats, we'll comment out or remove those specific stats to avoid errors,
+    // OR we can just show what we have.
+
+    // Let's stick to the visible stats we have: Storage Used (Total Uploaded) and 30-Day Usage.
 
     useEffect(() => {
         if (isOpen && session?.user?.id) {
@@ -101,8 +110,8 @@ export function ProfileModal({ isOpen, onClose, session }: ProfileModalProps) {
                                     </div>
                                     {/* Status Indicator */}
                                     <div className={`absolute bottom-1 right-1 w-4 h-4 rounded-full border-2 border-zinc-900 ${plan === 'unlimited' ? 'bg-purple-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]' :
-                                        plan === 'pro' ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' :
-                                            'bg-zinc-500'
+                                            plan === 'pro' ? 'bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]' :
+                                                'bg-zinc-500'
                                         }`} />
                                 </div>
 
@@ -194,27 +203,20 @@ export function ProfileModal({ isOpen, onClose, session }: ProfileModalProps) {
                                     <Sparkles className="w-3 h-3" />
                                     Mission Stats
                                 </h3>
-                                <div className="grid grid-cols-3 gap-4">
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center group hover:bg-white/10 transition-colors">
                                         <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-3 text-purple-400 group-hover:scale-110 transition-transform">
                                             <HardDrive className="w-5 h-5" />
                                         </div>
-                                        <div className="text-2xl font-bold text-white mb-1">{stats.storageUsed}</div>
-                                        <div className="text-[10px] uppercase tracking-wider text-white/40">Storage Used</div>
-                                    </div>
-                                    <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center group hover:bg-white/10 transition-colors">
-                                        <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3 text-blue-400 group-hover:scale-110 transition-transform">
-                                            <Share2 className="w-5 h-5" />
-                                        </div>
-                                        <div className="text-2xl font-bold text-white mb-1">{stats.filesShared}</div>
-                                        <div className="text-[10px] uppercase tracking-wider text-white/40">Files Shared</div>
+                                        <div className="text-2xl font-bold text-white mb-1">{storageUsed}</div>
+                                        <div className="text-[10px] uppercase tracking-wider text-white/40">Total Uploaded</div>
                                     </div>
                                     <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center group hover:bg-white/10 transition-colors">
                                         <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-3 text-emerald-400 group-hover:scale-110 transition-transform">
-                                            <Users className="w-5 h-5" />
+                                            <Calendar className="w-5 h-5" />
                                         </div>
-                                        <div className="text-2xl font-bold text-white mb-1">{stats.downloads}</div>
-                                        <div className="text-[10px] uppercase tracking-wider text-white/40">Downloads</div>
+                                        <div className="text-2xl font-bold text-white mb-1">{formatBytes(stats?.last_30_days_uploaded || 0)}</div>
+                                        <div className="text-[10px] uppercase tracking-wider text-white/40">30-Day Usage</div>
                                     </div>
                                 </div>
                             </section>
