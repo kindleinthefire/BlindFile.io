@@ -52,7 +52,7 @@ const FAQ_CATEGORIES = [
             {
                 id: "mobile-encryption",
                 q: "Is mobile downloading Zero-Knowledge?",
-                a: "Status: HYBRID. Mobile browsers lack the computational density and memory management required to decrypt massive files client-side without crashing. To bypass these hardware limits, we utilize a Server-Side Bridge Protocol for mobile devices.\n\nThe Process: The file is temporarily decrypted in a secure, isolated memory sandbox on our server, then immediately streamed to your device via standard HTTPS.\n\nThe Risk Profile: While the file is strictly encrypted in transit, for the brief duration of the download, it is theoretically visible to the server process.\n\nThe Guarantee: This memory sandbox is ephemeral. Once the stream closes, the decrypted data is wiped from RAM instantly. No logs, no copies. For absolute Zero-Knowledge assurance, we recommend using a Desktop terminal."
+                a: "Status: ZERO-KNOWLEDGE (Native). While mobile browsers lack the memory to decrypt massive files via AES-GCM without crashing, we solved this by implementing native ZipCrypto support.\n\nThe Process: Your file is encrypted into a password-protected ZIP on your device before upload. The password is generated locally and never sent to us.\n\nThe Trade-off: To ensure you can open files natively in the iOS Files app, we use standard ZipCrypto encryption. While slightly less robust than our Desktop AES-256-GCM, it ensures the server NEVER sees your unencrypted data.\n\nThe Guarantee: Zero logs. Zero copies. Zero knowledge. Your phone creates the lock, and only the recipient has the key."
             }
         ]
     },
