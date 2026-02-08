@@ -1,4 +1,5 @@
 import { Suspense, useState, FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ThreeBackground } from '../components/ThreeBackground';
 import { Link } from 'react-router-dom';
@@ -96,7 +97,7 @@ function ContactModal({ isOpen, onClose, type }: ContactModalProps) {
     };
     const theme = colors[content.color as keyof typeof colors];
 
-    return (
+    return createPortal(
         <AnimatePresence>
             {isOpen && (
                 <>
@@ -105,14 +106,14 @@ function ContactModal({ isOpen, onClose, type }: ContactModalProps) {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60]"
+                        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[9998]"
                     />
 
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl p-8 z-[70] shadow-2xl"
+                        className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl p-8 z-[9999] shadow-2xl"
                     >
                         <button
                             onClick={onClose}
@@ -209,7 +210,8 @@ function ContactModal({ isOpen, onClose, type }: ContactModalProps) {
                     </motion.div>
                 </>
             )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 }
 
